@@ -15,6 +15,8 @@ interface UiStore {
 
   sourceLines: string[];
   setSourceLines: (lines: string[]) => void;
+  highlightedLines: string[] | undefined;
+  setHighlightedLines: (lines: string[] | undefined) => void;
 
   selectedVariableIndex: number;
   setSelectedVariableIndex: (index: number) => void;
@@ -33,6 +35,9 @@ interface UiStore {
   openCommandBar: () => void;
   closeCommandBar: () => void;
   setCommandBarValue: (value: string) => void;
+
+  collapsedPanels: Set<FocusedPanel>;
+  toggleCollapsed: (panel: FocusedPanel) => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -50,6 +55,8 @@ export const useUiStore = create<UiStore>((set) => ({
 
   sourceLines: [],
   setSourceLines: (lines) => set({ sourceLines: lines }),
+  highlightedLines: undefined,
+  setHighlightedLines: (lines) => set({ highlightedLines: lines }),
 
   selectedVariableIndex: 0,
   setSelectedVariableIndex: (index) => set({ selectedVariableIndex: Math.max(0, index) }),
@@ -73,5 +80,14 @@ export const useUiStore = create<UiStore>((set) => ({
   commandBarValue: '',
   openCommandBar: () => set({ commandBarOpen: true, commandBarValue: '' }),
   closeCommandBar: () => set({ commandBarOpen: false, commandBarValue: '' }),
-  setCommandBarValue: (value) => set({ commandBarValue: value })
+  setCommandBarValue: (value) => set({ commandBarValue: value }),
+
+  collapsedPanels: new Set<FocusedPanel>(),
+  toggleCollapsed: (panel) =>
+    set((state) => {
+      const next = new Set(state.collapsedPanels);
+      if (next.has(panel)) next.delete(panel);
+      else next.add(panel);
+      return { collapsedPanels: next };
+    })
 }));
