@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm view *)",
+      "Bash(cargo new *)",
+      "Bash(cargo build *)",
+      "Bash(./target/debug/loop-demo)",
+      "Bash(npm run *)",
+      "Bash(./bin/dbg.js run *)",
+      "Bash(echo \"exit code: $?\")",
+      "Bash(/opt/homebrew/bin/node --version)",
+      "Bash(node -e \"import\\('electron'\\).then\\(m => console.log\\('resolved path:', m.default\\)\\)\")",
+      "Bash(/Users/bas/standalone-debugger-poc/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron --version)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(cat)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(rm -f /tmp/raw-debug.mjs /tmp/raw-debug2.mjs /tmp/raw-debug3.mjs /tmp/expand-check.mjs /tmp/cli-test.mjs)",
+      "Bash(./node_modules/.bin/tsc --version)",
+      "Bash(npx tsx *)",
+      "Bash(rm -rf /Users/bas/standalone-debugger-poc/fixtures/loop-demo/.git *)"
+    ],
+    "additionalDirectories": [
+      "/private/tmp",
+      "/Users/bas/standalone-debugger-poc/fixtures/loop-demo/.git"
+    ]
+  }
+}
