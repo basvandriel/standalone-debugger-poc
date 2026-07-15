@@ -1,0 +1,77 @@
+import { create } from 'zustand';
+
+export type FocusedPanel = 'source' | 'stack' | 'variables' | 'watch' | 'console';
+export type OutputTab = 'program' | 'dap';
+
+const PANEL_ORDER: FocusedPanel[] = ['source', 'stack', 'variables', 'watch', 'console'];
+
+interface UiStore {
+  focusedPanel: FocusedPanel;
+  cycleFocus: (direction: 1 | -1) => void;
+  setFocusedPanel: (panel: FocusedPanel) => void;
+
+  cursorLine: number;
+  setCursorLine: (line: number) => void;
+
+  sourceLines: string[];
+  setSourceLines: (lines: string[]) => void;
+
+  selectedVariableIndex: number;
+  setSelectedVariableIndex: (index: number) => void;
+  expandedRefs: Set<number>;
+  toggleExpandedRef: (ref: number) => void;
+  resetVariableExpansion: () => void;
+
+  selectedWatchIndex: number;
+  setSelectedWatchIndex: (index: number) => void;
+
+  outputTab: OutputTab;
+  setOutputTab: (tab: OutputTab) => void;
+
+  commandBarOpen: boolean;
+  commandBarValue: string;
+  openCommandBar: () => void;
+  closeCommandBar: () => void;
+  setCommandBarValue: (value: string) => void;
+}
+
+export const useUiStore = create<UiStore>((set) => ({
+  focusedPanel: 'source',
+  cycleFocus: (direction) =>
+    set((state) => {
+      const currentIndex = PANEL_ORDER.indexOf(state.focusedPanel);
+      const nextIndex = (currentIndex + direction + PANEL_ORDER.length) % PANEL_ORDER.length;
+      return { focusedPanel: PANEL_ORDER[nextIndex] };
+    }),
+  setFocusedPanel: (panel) => set({ focusedPanel: panel }),
+
+  cursorLine: 1,
+  setCursorLine: (line) => set({ cursorLine: Math.max(1, line) }),
+
+  sourceLines: [],
+  setSourceLines: (lines) => set({ sourceLines: lines }),
+
+  selectedVariableIndex: 0,
+  setSelectedVariableIndex: (index) => set({ selectedVariableIndex: Math.max(0, index) }),
+  expandedRefs: new Set<number>(),
+  toggleExpandedRef: (ref) =>
+    set((state) => {
+      const next = new Set(state.expandedRefs);
+      if (next.has(ref)) next.delete(ref);
+      else next.add(ref);
+      return { expandedRefs: next };
+    }),
+  resetVariableExpansion: () => set({ expandedRefs: new Set<number>(), selectedVariableIndex: 0 }),
+
+  selectedWatchIndex: 0,
+  setSelectedWatchIndex: (index) => set({ selectedWatchIndex: Math.max(0, index) }),
+
+  outputTab: 'program',
+  setOutputTab: (tab) => set({ outputTab: tab }),
+
+  commandBarOpen: false,
+  commandBarValue: '',
+  openCommandBar: () => set({ commandBarOpen: true, commandBarValue: '' }),
+  closeCommandBar: () => set({ commandBarOpen: false, commandBarValue: '' }),
+  setCommandBarValue: (value) => set({ commandBarValue: value })
+}));
