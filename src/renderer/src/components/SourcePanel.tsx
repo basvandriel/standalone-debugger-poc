@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import type { SessionSnapshot } from '@shared/types';
 import { useUiStore } from '../store/useUiStore';
+import { Panel } from './Panel';
 
 interface SourcePanelProps {
   snapshot: SessionSnapshot;
@@ -7,8 +9,11 @@ interface SourcePanelProps {
 
 export function SourcePanel({ snapshot }: SourcePanelProps) {
   const sourceLines = useUiStore((s) => s.sourceLines);
+  const highlightedLines = useUiStore((s) => s.highlightedLines);
   const cursorLine = useUiStore((s) => s.cursorLine);
+  const setCursorLine = useUiStore((s) => s.setCursorLine);
   const focusedPanel = useUiStore((s) => s.focusedPanel);
+  const setFocusedPanel = useUiStore((s) => s.setFocusedPanel);
   const isFocused = focusedPanel === 'source';
 
   const breakpoints = snapshot.breakpoints[snapshot.sourcePath] ?? [];
@@ -16,31 +21,65 @@ export function SourcePanel({ snapshot }: SourcePanelProps) {
   const currentFrame = snapshot.stack.find((f) => f.id === snapshot.selectedFrameId);
   const currentLine = currentFrame?.sourcePath === snapshot.sourcePath ? currentFrame.line : undefined;
 
+  // Execution position takes priority over the keyboard cursor -- when a
+  // breakpoint hits somewhere off-screen, that's what needs to scroll into
+  // view, not wherever the cursor happened to be left.
+  const activeLine = currentLine ?? (isFocused ? cursorLine : undefined);
+  const activeRowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    activeRowRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [activeLine]);
+
+  function toggleBreakpointAt(line: number): void {
+    setFocusedPanel('source');
+    setCursorLine(line);
+    void window.dbg.toggleBreakpoint(snapshot.sourcePath, line);
+  }
+
   return (
-    <div className={`panel source-panel ${isFocused ? 'panel-focused' : ''}`}>
-      <div className="panel-title">source -- {snapshot.sourcePath}</div>
-      <div className="source-scroll">
-        {sourceLines.length === 0 ? (
-          <div className="dim">(no source loaded)</div>
-        ) : (
-          sourceLines.map((text, idx) => {
-            const line = idx + 1;
-            const bp = breakpointByLine.get(line);
-            const isCurrent = line === currentLine;
-            const isCursor = isFocused && line === cursorLine;
-            return (
-              <div
-                key={line}
-                className={`source-line ${isCurrent ? 'source-line-current' : ''} ${isCursor ? 'source-line-cursor' : ''}`}
+    <Panel
+      id="source"
+      title={`source -- ${snapshot.sourcePath}`}
+      focused={isFocused}
+      bodyClassName="[font-variant-ligatures:none]"
+    >
+      {sourceLines.length === 0 ? (
+        <div className="text-fg-dim">(no source loaded)</div>
+      ) : (
+        sourceLines.map((text, idx) => {
+          const line = idx + 1;
+          const bp = breakpointByLine.get(line);
+          const isCurrent = line === currentLine;
+          const isCursor = isFocused && line === cursorLine;
+          return (
+            <div
+              key={line}
+              ref={line === activeLine ? activeRowRef : undefined}
+              className={`flex whitespace-pre px-2 ${isCurrent ? 'bg-accent-dim' : ''} ${
+                isCursor ? 'shadow-[inset_2px_0_0_var(--color-accent)]' : ''
+              }`}
+            >
+              <span
+                className="w-3.5 flex-none cursor-pointer text-error hover:bg-hover"
+                onClick={() => toggleBreakpointAt(line)}
               >
-                <span className="gutter-bp">{bp ? (bp.verified ? '●' : '○') : ' '}</span>
-                <span className="gutter-line">{line}</span>
-                <span className="source-text">{text}</span>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </div>
+                {bp ? (bp.verified ? '●' : '○') : ' '}
+              </span>
+              <span
+                className="w-8.5 flex-none cursor-pointer pr-2.5 text-right text-fg-dim hover:bg-hover"
+                onClick={() => toggleBreakpointAt(line)}
+              >
+                {line}
+              </span>
+              {highlightedLines?.[idx] !== undefined ? (
+                <span dangerouslySetInnerHTML={{ __html: highlightedLines[idx] }} />
+              ) : (
+                <span>{text}</span>
+              )}
+            </div>
+          );
+        })
+      )}
+    </Panel>
   );
 }

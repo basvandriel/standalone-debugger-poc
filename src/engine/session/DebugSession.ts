@@ -386,6 +386,7 @@ export class DebugSession {
 
   private handleTerminated(): void {
     this.phase = 'terminated';
+    this.clearRuntimeState();
     this.emitSnapshot();
   }
 
@@ -414,13 +415,32 @@ export class DebugSession {
     if (this.phase === 'terminated' || this.phase === 'error') return;
     this.phase = 'error';
     this.errorMessage = `adapter process exited unexpectedly (code=${code}, signal=${signal})`;
+    this.clearRuntimeState();
     this.emitSnapshot();
   }
 
   private handleFatalError(err: unknown): void {
     this.phase = 'error';
     this.errorMessage = err instanceof Error ? err.message : String(err);
+    this.clearRuntimeState();
     this.emitSnapshot();
+  }
+
+  /**
+   * Once the debuggee/adapter is gone, stack/scopes/variables from the last
+   * stop are no longer real -- leaving them in the snapshot would look like
+   * the UI is still inspecting a live process. Breakpoints and watch
+   * *expressions* survive (still meaningful for the next run); watch
+   * *values* don't, since there's nothing left to evaluate them against.
+   */
+  private clearRuntimeState(): void {
+    this.threads = [];
+    this.selectedThreadId = undefined;
+    this.stack = [];
+    this.selectedFrameId = undefined;
+    this.scopesByFrame.clear();
+    this.variablesByRef.clear();
+    this.watches = this.watches.map((w) => ({ ...w, value: undefined, error: 'not running' }));
   }
 
   private logDap(direction: DapLogDirection, payload: unknown): void {

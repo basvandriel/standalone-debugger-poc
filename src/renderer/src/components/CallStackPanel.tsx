@@ -1,5 +1,8 @@
+import { useEffect, useRef } from 'react';
 import type { SessionSnapshot } from '@shared/types';
 import { useUiStore } from '../store/useUiStore';
+import { Panel } from './Panel';
+import { emptyStackMessage } from '../lib/phaseMessages';
 
 interface CallStackPanelProps {
   snapshot: SessionSnapshot;
@@ -9,24 +12,32 @@ export function CallStackPanel({ snapshot }: CallStackPanelProps) {
   const focusedPanel = useUiStore((s) => s.focusedPanel);
   const isFocused = focusedPanel === 'stack';
 
+  const selectedRowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    selectedRowRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [snapshot.selectedFrameId]);
+
   return (
-    <div className={`panel stack-panel ${isFocused ? 'panel-focused' : ''}`}>
-      <div className="panel-title">call stack</div>
-      <div className="panel-scroll">
-        {snapshot.stack.length === 0 ? (
-          <div className="dim">(not stopped)</div>
-        ) : (
-          snapshot.stack.map((frame) => (
+    <Panel id="stack" title="call stack" focused={isFocused}>
+      {snapshot.stack.length === 0 ? (
+        <div className="text-fg-dim">{emptyStackMessage(snapshot.phase)}</div>
+      ) : (
+        snapshot.stack.map((frame) => {
+          const isSelected = frame.id === snapshot.selectedFrameId;
+          return (
             <div
               key={frame.id}
-              className={`list-row ${frame.id === snapshot.selectedFrameId ? 'list-row-selected' : ''}`}
+              ref={isSelected ? selectedRowRef : undefined}
+              className={`flex cursor-pointer truncate px-2 py-px hover:bg-hover ${isSelected ? 'bg-selection' : ''}`}
               onClick={() => window.dbg.selectFrame(frame.id)}
             >
-              {frame.name} <span className="dim">@ {frame.line}</span>
+              <span className={`w-3 flex-none ${isSelected ? 'text-accent' : ''}`}>{isSelected ? '▸' : ' '}</span>
+              <span className={isSelected ? 'text-accent' : ''}>{frame.name}</span>
+              <span className="text-fg-dim">&nbsp;@ {frame.line}</span>
             </div>
-          ))
-        )}
-      </div>
-    </div>
+          );
+        })
+      )}
+    </Panel>
   );
 }

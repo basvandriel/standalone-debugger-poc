@@ -18,7 +18,8 @@
       "Bash(rm -f /tmp/raw-debug.mjs /tmp/raw-debug2.mjs /tmp/raw-debug3.mjs /tmp/expand-check.mjs /tmp/cli-test.mjs)",
       "Bash(./node_modules/.bin/tsc --version)",
       "Bash(npx tsx *)",
-      "Bash(rm -rf /Users/bas/standalone-debugger-poc/fixtures/loop-demo/.git *)"
+      "Bash(rm -rf /Users/bas/standalone-debugger-poc/fixtures/loop-demo/.git *)",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('/Users/bas/standalone-debugger-poc/node_modules/shiki/package.json'\\).exports\\)\\)\")"
     ],
     "additionalDirectories": [
       "/private/tmp",
