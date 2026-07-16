@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { SessionSnapshot } from '@shared/types';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@shared/ui/useUiStore';
 import { Panel } from './Panel';
 
 interface WatchPanelProps {
@@ -18,14 +18,9 @@ export function WatchPanel({ snapshot }: WatchPanelProps) {
   }, [isFocused, selectedIndex]);
 
   return (
-    <Panel
-      id="watch"
-      title="watches -- press : then :watch <expr>, Delete to remove"
-      focused={isFocused}
-      bottomBorder={false}
-    >
+    <Panel id="watch" title="watches" focused={isFocused} bottomBorder={false}>
       {snapshot.watches.length === 0 ? (
-        <div className="text-fg-dim">(none)</div>
+        <div className="text-fg-dim">(none -- : then :watch &lt;expr&gt;)</div>
       ) : (
         snapshot.watches.map((watch, idx) => {
           const isSelected = isFocused && idx === selectedIndex;

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { SessionSnapshot } from '@shared/types';
-import { useUiStore } from '../store/useUiStore';
-import { flattenScopes } from '../lib/flattenVariables';
+import { useUiStore } from '@shared/ui/useUiStore';
+import { flattenScopes } from '@shared/ui/flattenVariables';
 import { Panel } from './Panel';
-import { emptyStackMessage } from '../lib/phaseMessages';
+import { emptyStackMessage } from '@shared/ui/phaseMessages';
+import { ELECTRON_KEYS } from '@shared/ui/keybindings';
 
 interface VariablesPanelProps {
   snapshot: SessionSnapshot;
@@ -35,7 +36,7 @@ export function VariablesPanel({ snapshot }: VariablesPanelProps) {
   return (
     <Panel id="variables" title="variables" focused={isFocused}>
       {rows.length === 0 ? (
-        <div className="text-fg-dim">{emptyStackMessage(snapshot.phase)}</div>
+        <div className="text-fg-dim">{emptyStackMessage(snapshot.phase, ELECTRON_KEYS.startContinue)}</div>
       ) : (
         rows.map((row, idx) => {
           const isSelected = isFocused && idx === selectedIndex;

@@ -179,13 +179,16 @@ export class DebugSession {
       ? current.filter((l) => l !== line)
       : [...current, line].sort((a, b) => a - b);
     this.breakpointLines.set(file, next);
+    await this.setBreakpointsForFile(file, next);
+  }
 
+  private async setBreakpointsForFile(file: string, lines: number[]): Promise<void> {
     const response = await this.sendRequest<
       { source: { path: string }; breakpoints: { line: number }[] },
       { breakpoints: { line: number; verified: boolean; id?: number }[] }
     >('setBreakpoints', {
       source: { path: file },
-      breakpoints: next.map((l) => ({ line: l }))
+      breakpoints: lines.map((l) => ({ line: l }))
     });
 
     this.breakpoints.set(
@@ -193,6 +196,41 @@ export class DebugSession {
       response.breakpoints.map((b) => ({ line: b.line, verified: b.verified, id: b.id }))
     );
     this.emitSnapshot();
+  }
+
+  /**
+   * Re-runs the full adapter handshake from scratch. Only valid once the
+   * previous session has actually ended ('terminated'/'error') -- a fresh
+   * adapter process has no memory of prior breakpoints, so they're
+   * re-applied from `breakpointLines` (the line numbers survive
+   * `clearRuntimeState()`; the old verified/id descriptors don't, since
+   * they belonged to a now-dead adapter process).
+   */
+  async restart(): Promise<void> {
+    if (this.phase !== 'terminated' && this.phase !== 'error') return;
+    if (this.child && !this.child.killed) {
+      // Detach first -- otherwise this deliberate kill's async 'exit' event
+      // fires after the new child (spawned below by start()) is already
+      // live, and handleAdapterExit would clobber the *new* session back
+      // into 'error' since nothing else marks this exit as expected.
+      this.child.removeAllListeners('exit');
+      this.child.removeAllListeners('error');
+      this.client?.dispose();
+      this.child.kill();
+    }
+    this.client = undefined;
+    this.child = undefined;
+    this.launchPromise = undefined;
+    this.errorMessage = undefined;
+    this.breakpoints.clear();
+    this.watches = this.watches.map((w) => ({ ...w, value: undefined, error: undefined }));
+
+    await this.start();
+    if (!this.isSessionLive()) return; // start() already reported the failure via handleFatalError.
+
+    for (const [file, lines] of this.breakpointLines) {
+      if (lines.length > 0) await this.setBreakpointsForFile(file, lines);
+    }
   }
 
   async beginExecution(): Promise<void> {

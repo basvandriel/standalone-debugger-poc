@@ -11,15 +11,16 @@ interface LayoutProps {
   snapshot: SessionSnapshot;
   output: OutputEntry[];
   dapLog: DapLogEntry[];
+  highlightedLines: string[] | undefined;
 }
 
-export function Layout({ snapshot, output, dapLog }: LayoutProps) {
+export function Layout({ snapshot, output, dapLog, highlightedLines }: LayoutProps) {
   return (
     <div className="flex h-full flex-col">
       <StatusBar snapshot={snapshot} />
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-3 border-r border-border">
-          <SourcePanel snapshot={snapshot} />
+          <SourcePanel snapshot={snapshot} highlightedLines={highlightedLines} />
         </div>
         <div className="flex min-w-0 flex-2 flex-col">
           <CallStackPanel snapshot={snapshot} />

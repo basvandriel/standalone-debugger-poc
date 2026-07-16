@@ -12,9 +12,12 @@
     "dev": "electron-vite dev",
     "dev:fixture": "electron-vite dev -- run --adapter lldb-dap --program fixtures/loop-demo/target/debug/loop-demo --source fixtures/loop-demo/src/main.rs",
     "build": "electron-vite build",
-    "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
+    "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json && tsc -p tsconfig.tui.json",
     "smoke": "tsx scripts/smoke-test.ts",
-    "smoke:session": "tsx scripts/session-smoke-test.ts"
+    "smoke:session": "tsx scripts/session-smoke-test.ts",
+    "tui": "tsx src/tui/index.tsx",
+    "tui:fixture": "tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/loop-demo/target/debug/loop-demo --source fixtures/loop-demo/src/main.rs",
+    "smoke:tui": "tsx src/tui/__smoke__/tui-smoke-test.ts"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",
@@ -25,6 +28,8 @@
     "@vscode/debugprotocol": "^1.68.0",
     "electron": "^43.1.1",
     "electron-vite": "^5.0.0",
+    "ink": "^7.1.0",
+    "ink-testing-library": "^4.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "shiki": "^4.3.1",

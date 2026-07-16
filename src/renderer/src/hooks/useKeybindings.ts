@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { SessionSnapshot } from '@shared/types';
-import { useUiStore } from '../store/useUiStore';
-import { flattenScopes } from '../lib/flattenVariables';
+import { useUiStore } from '@shared/ui/useUiStore';
+import { flattenScopes } from '@shared/ui/flattenVariables';
+import { ELECTRON_KEYS } from '@shared/ui/keybindings';
 
 /**
  * Single global keydown listener implementing a flat dispatch table: global
@@ -32,7 +33,7 @@ export function useKeybindings(snapshot: SessionSnapshot | undefined): void {
 
       // Global VS Code-style debug actions -- work regardless of focused panel.
       switch (event.key) {
-        case ':':
+        case ELECTRON_KEYS.commandBar:
           event.preventDefault();
           ui.openCommandBar();
           return;
@@ -40,24 +41,24 @@ export function useKeybindings(snapshot: SessionSnapshot | undefined): void {
           event.preventDefault();
           ui.cycleFocus(event.shiftKey ? -1 : 1);
           return;
-        case 'F9':
+        case ELECTRON_KEYS.toggleBreakpoint:
           event.preventDefault();
           void window.dbg.toggleBreakpoint(snap.sourcePath, ui.cursorLine);
           return;
-        case 'F10':
+        case ELECTRON_KEYS.stepOver:
           if (snap.phase === 'stopped') {
             event.preventDefault();
             void window.dbg.stepOver();
           }
           return;
-        case 'F11':
+        case ELECTRON_KEYS.stepIn:
           if (snap.phase === 'stopped') {
             event.preventDefault();
             if (event.shiftKey) void window.dbg.stepOut();
             else void window.dbg.stepIn();
           }
           return;
-        case 'F5':
+        case ELECTRON_KEYS.startContinue:
           event.preventDefault();
           if (event.shiftKey) {
             window.close();
@@ -65,6 +66,8 @@ export function useKeybindings(snapshot: SessionSnapshot | undefined): void {
             void window.dbg.beginExecution();
           } else if (snap.phase === 'stopped') {
             void window.dbg.continueExecution();
+          } else if (snap.phase === 'terminated' || snap.phase === 'error') {
+            void window.dbg.restart();
           }
           return;
       }

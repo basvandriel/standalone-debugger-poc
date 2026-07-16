@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { SessionSnapshot } from '@shared/types';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@shared/ui/useUiStore';
 import { Panel } from './Panel';
-import { emptyStackMessage } from '../lib/phaseMessages';
+import { emptyStackMessage } from '@shared/ui/phaseMessages';
+import { ELECTRON_KEYS } from '@shared/ui/keybindings';
 
 interface CallStackPanelProps {
   snapshot: SessionSnapshot;
@@ -20,7 +21,7 @@ export function CallStackPanel({ snapshot }: CallStackPanelProps) {
   return (
     <Panel id="stack" title="call stack" focused={isFocused}>
       {snapshot.stack.length === 0 ? (
-        <div className="text-fg-dim">{emptyStackMessage(snapshot.phase)}</div>
+        <div className="text-fg-dim">{emptyStackMessage(snapshot.phase, ELECTRON_KEYS.startContinue)}</div>
       ) : (
         snapshot.stack.map((frame) => {
           const isSelected = frame.id === snapshot.selectedFrameId;

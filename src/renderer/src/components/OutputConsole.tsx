@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { DapLogEntry, OutputCategory, OutputEntry } from '@shared/types';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@shared/ui/useUiStore';
 import { Panel } from './Panel';
 
 interface OutputConsoleProps {

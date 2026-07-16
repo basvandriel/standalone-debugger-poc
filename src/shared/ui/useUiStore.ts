@@ -15,8 +15,6 @@ interface UiStore {
 
   sourceLines: string[];
   setSourceLines: (lines: string[]) => void;
-  highlightedLines: string[] | undefined;
-  setHighlightedLines: (lines: string[] | undefined) => void;
 
   selectedVariableIndex: number;
   setSelectedVariableIndex: (index: number) => void;
@@ -55,8 +53,6 @@ export const useUiStore = create<UiStore>((set) => ({
 
   sourceLines: [],
   setSourceLines: (lines) => set({ sourceLines: lines }),
-  highlightedLines: undefined,
-  setHighlightedLines: (lines) => set({ highlightedLines: lines }),
 
   selectedVariableIndex: 0,
   setSelectedVariableIndex: (index) => set({ selectedVariableIndex: Math.max(0, index) }),

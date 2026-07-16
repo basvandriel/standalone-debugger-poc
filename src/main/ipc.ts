@@ -19,6 +19,7 @@ export function registerIpcHandlers(window: BrowserWindow, session: DebugSession
   ipcMain.handle(IPC.ADD_WATCH, (_event, expression: string) => session.addWatch(expression));
   ipcMain.handle(IPC.REMOVE_WATCH, (_event, id: string) => session.removeWatch(id));
   ipcMain.handle(IPC.TERMINATE, () => session.terminate());
+  ipcMain.handle(IPC.RESTART, () => session.restart());
 
   session.onSnapshot((snapshot) => {
     if (!window.isDestroyed()) window.webContents.send(IPC.SNAPSHOT, snapshot);

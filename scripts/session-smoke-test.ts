@@ -154,11 +154,31 @@ async function main(): Promise<void> {
   assert.ok(stdoutText.includes('items=[2, 4, 6, 8, 10] total=30'), 'expected final summary line in captured stdout');
   console.log('[session-smoke] captured expected stdout summary line');
 
+  // Restart-after-exit: the session just reached 'terminated' naturally.
+  // restart() must spin up a brand-new adapter process and reach
+  // 'configuring' again, fully functional (breakpoints/execution working),
+  // without needing a new DebugSession instance.
+  console.log('[session-smoke] restarting session after natural termination...');
+  const restartPromise = session.restart();
+  await waitForPhase(session, 'configuring', 'post-restart handshake');
+  await restartPromise;
+  console.log('[session-smoke] restart() reached "configuring" phase');
+
+  await session.toggleBreakpoint(SOURCE, BREAKPOINT_LINE);
+  const bpAfterRestart = session.getSnapshot().breakpoints[SOURCE]?.[0];
+  assert.ok(bpAfterRestart, 'expected a breakpoint descriptor after restart + toggleBreakpoint');
+  assert.equal(bpAfterRestart.verified, true, 'expected breakpoint to be verified on the restarted adapter');
+
+  await session.beginExecution();
+  const stoppedAfterRestart = await waitForPhase(session, 'stopped', 'breakpoint hit after restart');
+  assert.equal(stoppedAfterRestart.stack[0]?.line, BREAKPOINT_LINE, 'expected restarted session to hit the same breakpoint');
+  console.log('[session-smoke] restarted session hit breakpoint correctly');
+
   await session.terminate();
   console.log('[session-smoke] terminate() completed (adapter process disconnected/killed)');
 
   console.log(
-    '[session-smoke] SUCCESS: DebugSession start/breakpoints/stop/variables/watch/step/continue/terminate ' +
+    '[session-smoke] SUCCESS: DebugSession start/breakpoints/stop/variables/watch/step/continue/restart/terminate ' +
       'all verified against the real loop-demo fixture via lldb-dap.'
   );
 }
