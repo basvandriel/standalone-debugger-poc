@@ -19,20 +19,21 @@ Both talk to the exact same `DebugSession` engine class, so behavior (the DAP
 handshake, breakpoints, stepping, watches, restart-after-exit, clean shutdown)
 is identical between them — only the rendering and keybindings differ.
 
-> **Status: proof of concept.** Only one adapter is wired up: **Rust via
-> `lldb-dap`**. See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the full
+> **Status: proof of concept.** Only one adapter is wired up: **`lldb-dap`**.
+> `lldb-dap` can debug multiple native languages, and this POC now includes
+> additional fixtures for Rust, C, and C++. See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the full
 > list of current limitations.
 
 ## Quick start
 
 Prerequisites: Node.js, Xcode Command Line Tools (for `lldb-dap`), and a Rust
-toolchain (only needed to build the bundled verification fixture).
+toolchain (only needed to build the bundled verification fixtures).
 
 ```bash
 npm install
 
-# build the fixture program dbg debugs by default
-cargo build --manifest-path fixtures/loop-demo/Cargo.toml
+# build the fixture binaries dbg debugs by default
+npm run build:fixtures
 ```
 
 **Electron app:**
@@ -47,9 +48,12 @@ npm run dev:fixture
 npm run tui:fixture
 ```
 
-Both launch against `fixtures/loop-demo` — a small Rust program with a loop,
-a `Vec`, and two helper functions, purpose-built to exercise breakpoints,
-stepping, call-stack navigation, and variable/`Vec` expansion.
+Both launch against `fixtures/loop-demo` by default — a small Rust program
+with a loop, a `Vec`, and two helper functions, purpose-built to exercise
+breakpoints, stepping, call-stack navigation, and variable/`Vec` expansion.
+
+This project now also includes second fixtures in `fixtures/c-loop` and
+`fixtures/cpp-loop` to verify C and C++ debugging with the same DAP frontend.
 
 To point either frontend at your own program instead of the fixture:
 
