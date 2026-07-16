@@ -44,7 +44,17 @@
       "Bash(time npx tsx /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/full-app-timing.ts)",
       "Bash(sed -i '' \"s#/Users/bas/standalone-debugger-poc/src/#../src/#g\" /Users/bas/standalone-debugger-poc/scripts/__tmp_timing.ts)",
       "Bash(sed -i '' \"s#/Users/bas/standalone-debugger-poc/fixtures/loop-demo#../fixtures/loop-demo#g\" /Users/bas/standalone-debugger-poc/scripts/__tmp_timing.ts)",
-      "Bash(time npx tsx /Users/bas/standalone-debugger-poc/scripts/__tmp_timing.ts)"
+      "Bash(time npx tsx /Users/bas/standalone-debugger-poc/scripts/__tmp_timing.ts)",
+      "Bash(pkill -f \"__tmp_timing\")",
+      "Bash(pkill -f \"31513\")",
+      "Bash(kill 31513)",
+      "Bash(/Library/Developer/CommandLineTools/usr/bin/lldb-dap --version)",
+      "Bash(/usr/bin/xcrun lldb *)",
+      "Bash(/Library/Developer/CommandLineTools/usr/bin/lldb-dap --help)",
+      "Bash(chmod +x /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/pty-timing.exp)",
+      "Bash(/private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/pty-timing.exp)",
+      "Bash(time npx tsx /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/timing-test5.ts)",
+      "Bash(sed -i '' 's#spawn npx tsx#spawn ./node_modules/.bin/tsx#' /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/pty-timing.exp)"
     ],
     "additionalDirectories": [
       "/private/tmp",
