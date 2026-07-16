@@ -80,7 +80,9 @@
       "Bash(sed -i '' 's/{ alternateScreen: true }/{}/' /Users/bas/standalone-debugger-poc/scripts/__tmp_minimal_ink.tsx)",
       "Bash(/private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/minimal-ink.exp)",
       "Bash(kill -9 62259 62258 62239 62236)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(kill -9 93427 93426 93407 93405)",
+      "Bash(kill -9 98772 98760 98741 98740)"
     ],
     "additionalDirectories": [
       "/private/tmp",

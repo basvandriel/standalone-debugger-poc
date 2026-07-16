@@ -27,37 +27,56 @@ times).
 
 The remaining gap is that **alternate-screen mode alone doesn't stop a
 mouse-wheel/trackpad scroll gesture from doing something terminal-native**
-while the app is running. xterm and xterm-compatible terminals have a
-*separate* mode for this — DECSET **1007**, "alternate scroll mode" — which
-translates a scroll gesture into Up/Down arrow-key sequences instead of
-native scrollback while the alt screen is active. `src/tui/index.tsx` now
-sends `\x1b[?1007h` right after entering the alt screen and `\x1b[?1007l` on
-every exit path (normal quit, Ctrl+C/SIGTERM, and after `waitUntilExit()`
-resolves) — this is exactly what k9s, vim, and tmux themselves send.
+while the app is running. Two layers are now sent from `src/tui/index.tsx`,
+enabled right after entering the alt screen and disabled on every exit path
+(normal quit, Ctrl+C/SIGTERM, and after `waitUntilExit()` resolves):
 
-**Why that might not be enough:** whether a terminal actually *honors* an
-app-sent `1007` sequence is inconsistent across terminals:
+1. **DECSET 1007** ("alternate scroll mode", `\x1b[?1007h`/`l`) — a
+   convenience some terminals implement that translates a scroll gesture
+   into Up/Down arrow-key sequences instead of native scrollback. This
+   alone turned out **not to be reliable**: it did not stop a trackpad
+   two-finger scroll from escaping the app in Terminal.app (macOS default)
+   in direct testing, even though the escape sequence was confirmed to be
+   sent correctly. Whether a terminal honors an app-sent `1007` request at
+   all is inconsistent — iTerm2, for example, requires the user to
+   separately enable **Preferences → Advanced → "Scroll wheel sends arrow
+   keys when in alternate screen mode"** (and turn *off* Preferences →
+   Profiles → Terminal → "Disable save/restore alternate screen") before it
+   honors it at all.
+2. **SGR mouse tracking** (`\x1b[?1000h\x1b[?1006h` / disabled with
+   `\x1b[?1000l\x1b[?1006l`) — the mechanism real full-screen terminal apps
+   actually rely on (vim's `mouse=a`, htop, less, tmux, k9s). This isn't a
+   translation the terminal might or might not choose to apply; enabling it
+   makes the terminal hand every mouse/scroll event to this process as a raw
+   escape sequence instead of acting on it at all, full stop. Ink has no
+   mouse-event parsing, so those sequences just arrive as unrecognized
+   `input` strings in `useInput` handlers and are silently ignored
+   (confirmed: they parse as one opaque CSI sequence starting with `[<`,
+   never as a recognized named key, so they can't collide with any
+   single-key binding like `q` or `:`).
 
-- **iTerm2** requires the user to separately enable **Preferences → Advanced
-  → "Scroll wheel sends arrow keys when in alternate screen mode"**, and
-  also requires **Preferences → Profiles → Terminal → "Disable save/restore
-  alternate screen"** to be turned *off*. Without that preference enabled,
-  iTerm2 does not honor the app's `1007` request at all, regardless of what
-  the app sends.
-- Whether **Terminal.app** supports this feature at all was not confirmed —
-  the evidence found so far is specific to iTerm2/xterm/Konsole.
-- This was investigated but **not verified against a real interactive
-  terminal session** — everything in this repo's test suite runs through
-  `expect`-driven pseudo-terminals (see [TESTING.md](TESTING.md)), which
-  don't generate real mouse-wheel/trackpad scroll events at all, so the
-  actual fix could not be end-to-end verified from within this environment.
+**Trade-off:** with mouse tracking enabled, normal click-drag text selection
+inside the terminal stops working while this app is running (the terminal
+hands clicks to the app instead of using them for selection). Most
+terminals, Terminal.app and iTerm2 included, let you hold **Option** while
+click-dragging to select text anyway, bypassing the app's mouse capture —
+this is the standard, expected workaround and matches what other full-screen
+terminal apps already require.
 
-**If you hit this:** check which terminal you're using and whether the
-relevant preference is enabled (iTerm2, above). If it still happens with
-that preference on, or in a terminal that has no equivalent preference,
-that's a genuine gap worth revisiting — possibly worth detecting the
-terminal type and warning the user, or documenting a per-terminal
-workaround table here once more terminals have actually been tested against.
+**Verification status:** both escape sequences were confirmed byte-for-byte
+correct (fire in the right order, on every exit path) via a real
+pseudo-terminal, and normal keyboard operation (navigation, quit) was
+re-verified to still work after enabling mouse tracking. What could **not**
+be verified from within this environment is the actual trackpad/mouse-wheel
+gesture itself — `expect`-driven pseudo-terminals (see
+[TESTING.md](TESTING.md)) don't generate real scroll input, so there is no
+way to end-to-end confirm this from an automated test. If you still see
+scrolling escape the app after this fix, that's a strong signal worth
+reporting — the next thing to check would be whether the terminal in use
+strips/ignores SGR mouse mode entirely (rare, but possible for a terminal
+emulator with limited xterm compatibility), or whether there's a
+distinction between how it reports two-finger trackpad gestures versus a
+literal mouse wheel that neither `1007` nor `1000`/`1006` account for.
 
 ## Investigated, not confirmed as a real bug: input can stop responding under a scripted PTY
 

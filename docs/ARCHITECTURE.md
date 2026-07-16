@@ -187,12 +187,13 @@ consequence of the terminal having no native scroll, no mouse, and fixed
 character-cell dimensions.
 
 - **`index.tsx`** — the entry point. Renders with `alternateScreen: true`
-  (so quitting restores the shell exactly as it was) and additionally sends
-  the xterm "alternate scroll mode" escape sequence (`\x1b[?1007h` /
-  `\x1b[?1007l` on exit) — without it, some terminals let a mouse-wheel
-  scroll fall through to native scrollback instead of being translated into
-  arrow-key events. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for why this
-  isn't a complete guarantee across every terminal.
+  (so quitting restores the shell exactly as it was) and additionally
+  enables SGR mouse tracking (`\x1b[?1000h\x1b[?1006h`) plus xterm's
+  alternate-scroll convenience mode (`\x1b[?1007h`), disabling all three on
+  every exit path — without this, some terminals let a mouse-wheel/trackpad
+  scroll escape the app entirely instead of staying captured by it. See
+  [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for the full detail on why `1007` alone
+  wasn't sufficient and what the mouse-tracking trade-off is.
 - **`hooks/useTuiKeybindings.ts`** — one `useInput` hook implementing
   k9s/lazygit-style letter bindings. Reads `useUiStore.getState()` live
   inside the handler rather than closing over render-time state, which
