@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import type { SessionSnapshot } from '@shared/types';
-import { useUiStore } from '@shared/ui/useUiStore';
-import { Panel } from './Panel';
+import { useEffect, useRef } from "react";
+import type { SessionSnapshot } from "@shared/types";
+import { useUiStore } from "@shared/ui/useUiStore";
+import { Panel } from "./Panel";
 
 interface SourcePanelProps {
   snapshot: SessionSnapshot;
@@ -14,12 +14,17 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
   const setCursorLine = useUiStore((s) => s.setCursorLine);
   const focusedPanel = useUiStore((s) => s.focusedPanel);
   const setFocusedPanel = useUiStore((s) => s.setFocusedPanel);
-  const isFocused = focusedPanel === 'source';
+  const isFocused = focusedPanel === "source";
 
   const breakpoints = snapshot.breakpoints[snapshot.sourcePath] ?? [];
   const breakpointByLine = new Map(breakpoints.map((b) => [b.line, b]));
-  const currentFrame = snapshot.stack.find((f) => f.id === snapshot.selectedFrameId);
-  const currentLine = currentFrame?.sourcePath === snapshot.sourcePath ? currentFrame.line : undefined;
+  const currentFrame = snapshot.stack.find(
+    (f) => f.id === snapshot.selectedFrameId,
+  );
+  const currentLine =
+    currentFrame?.sourcePath === snapshot.sourcePath
+      ? currentFrame.line
+      : undefined;
 
   // Execution position takes priority over the keyboard cursor -- when a
   // breakpoint hits somewhere off-screen, that's what needs to scroll into
@@ -27,11 +32,11 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
   const activeLine = currentLine ?? (isFocused ? cursorLine : undefined);
   const activeRowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    activeRowRef.current?.scrollIntoView({ block: 'nearest' });
+    activeRowRef.current?.scrollIntoView({ block: "nearest" });
   }, [activeLine]);
 
   function toggleBreakpointAt(line: number): void {
-    setFocusedPanel('source');
+    setFocusedPanel("source");
     setCursorLine(line);
     void window.dbg.toggleBreakpoint(snapshot.sourcePath, line);
   }
@@ -39,7 +44,7 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
   return (
     <Panel
       id="source"
-      title={snapshot.sourcePath.split('/').pop() ?? snapshot.sourcePath}
+      title={snapshot.sourcePath.split("/").pop() ?? snapshot.sourcePath}
       focused={isFocused}
       bodyClassName="[font-variant-ligatures:none] h-full overflow-y-auto"
     >
@@ -55,8 +60,8 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
             <div
               key={line}
               ref={line === activeLine ? activeRowRef : undefined}
-              className={`group flex whitespace-pre transition-colors ${isCurrent ? 'bg-accent-dim/70' : ''} ${
-                isCursor ? 'shadow-[inset_2px_0_0_var(--color-accent)]' : ''
+              className={`group flex whitespace-pre transition-colors ${isCurrent ? "bg-accent-dim/70" : ""} ${
+                isCursor ? "shadow-[inset_2px_0_0_var(--color-accent)]" : ""
               }`}
             >
               <span
@@ -65,7 +70,7 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
               >
                 {bp ? (
                   <span
-                    className={`h-2 w-2 rounded-full ${bp.verified ? 'bg-error' : 'border border-error bg-transparent'}`}
+                    className={`h-2 w-2 rounded-full ${bp.verified ? "bg-error" : "border border-error bg-transparent"}`}
                   />
                 ) : (
                   <span className="h-2 w-2 rounded-full bg-transparent opacity-0 group-hover:opacity-30 group-hover:bg-fg-dim" />
@@ -78,7 +83,9 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
                 {line}
               </span>
               {highlightedLines?.[idx] !== undefined ? (
-                <span dangerouslySetInnerHTML={{ __html: highlightedLines[idx] }} />
+                <span
+                  dangerouslySetInnerHTML={{ __html: highlightedLines[idx] }}
+                />
               ) : (
                 <span>{text}</span>
               )}

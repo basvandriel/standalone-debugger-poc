@@ -1,13 +1,13 @@
 // "unused" React import is required: tsx's automatic JSX runtime silently
 // breaks useEffect for components imported from other files without it.
-import React from 'react';
-import { access, open, type FileHandle } from 'node:fs/promises';
-import { render } from 'ink';
-import { parseCliOptions } from '../main/cli.js';
-import { DebugSession } from '../engine/session/DebugSession.js';
-import { getAdapter, adapterById } from '../engine/adapters/index.js';
-import { App } from './App.js';
-import { useUiStore } from '../shared/ui/useUiStore.js';
+import React from "react";
+import { access, open, type FileHandle } from "node:fs/promises";
+import { render } from "ink";
+import { parseCliOptions } from "../main/cli.js";
+import { DebugSession } from "../engine/session/DebugSession.js";
+import { getAdapter, adapterById } from "../engine/adapters/index.js";
+import { App } from "./App.js";
+import { useUiStore } from "../shared/ui/useUiStore.js";
 
 const cliOptions = parseCliOptions(process.argv.slice(2));
 if (!cliOptions) {
@@ -16,7 +16,9 @@ if (!cliOptions) {
 
 const adapter = getAdapter(cliOptions.adapter);
 if (!adapter) {
-  console.error(`dbg: unsupported adapter "${cliOptions.adapter}" (supported adapters: ${Object.keys(adapterById).join(', ')})`);
+  console.error(
+    `dbg: unsupported adapter "${cliOptions.adapter}" (supported adapters: ${Object.keys(adapterById).join(", ")})`,
+  );
   process.exit(1);
 }
 
@@ -30,8 +32,10 @@ try {
 let logHandle: FileHandle | undefined;
 if (cliOptions.logFile) {
   try {
-    logHandle = await open(cliOptions.logFile, 'a');
-    await logHandle.write(`\n=== dbg session started ${new Date().toISOString()} ===\n`);
+    logHandle = await open(cliOptions.logFile, "a");
+    await logHandle.write(
+      `\n=== dbg session started ${new Date().toISOString()} ===\n`,
+    );
   } catch (err) {
     console.error(`dbg: failed to open log file ${cliOptions.logFile}:`, err);
   }
@@ -53,7 +57,7 @@ function formatPayload(payload: unknown): string {
   try {
     return clip(JSON.stringify(payload));
   } catch {
-    return '[unserializable payload]';
+    return "[unserializable payload]";
   }
 }
 
@@ -62,8 +66,10 @@ async function flushLogQueue(force = false): Promise<void> {
   logFlushInFlight = true;
   try {
     while (logQueue.length > 0) {
-      const take = force ? logQueue.length : Math.min(LOG_FLUSH_CHUNK_SIZE, logQueue.length);
-      const chunk = logQueue.splice(0, take).join('');
+      const take = force
+        ? logQueue.length
+        : Math.min(LOG_FLUSH_CHUNK_SIZE, logQueue.length);
+      const chunk = logQueue.splice(0, take).join("");
       await logHandle.write(chunk);
       if (!force) break;
     }
@@ -92,29 +98,35 @@ const session = new DebugSession(
     adapterId: cliOptions.adapter,
     programPath: cliOptions.program,
     sourcePath: cliOptions.source,
-    cwd: cliOptions.cwd
+    cwd: cliOptions.cwd,
   },
-  adapter
+  adapter,
 );
 
 const unsubscribeOutput = session.onOutput((entry) => {
-  writeLog(`[OUTPUT ${entry.category}] ${clip(entry.text.replace(/\r?\n/g, '\\n'))}`);
+  writeLog(
+    `[OUTPUT ${entry.category}] ${clip(entry.text.replace(/\r?\n/g, "\\n"))}`,
+  );
 });
 const unsubscribeDapLog = session.onDapLog((entry) => {
   writeLog(`[DAP ${entry.direction}] ${formatPayload(entry.payload)}`);
 });
 const unsubscribeSnapshot = session.onSnapshot((snapshot) => {
-  if (snapshot.phase === 'error') {
-    const message = snapshot.errorMessage ? `session error: ${snapshot.errorMessage}` : 'session entered error state';
+  if (snapshot.phase === "error") {
+    const message = snapshot.errorMessage
+      ? `session error: ${snapshot.errorMessage}`
+      : "session entered error state";
     writeLog(`[ERROR] ${message}`);
     process.stderr.write(`${message}\n`);
   }
 });
 
-const { waitUntilExit } = render(<App session={session} />, { alternateScreen: true });
+const { waitUntilExit } = render(<App session={session} />, {
+  alternateScreen: true,
+});
 
 function wheelDeltaFromChunk(chunk: Buffer): number {
-  const text = chunk.toString('latin1');
+  const text = chunk.toString("latin1");
   let delta = 0;
 
   // SGR mouse events: ESC [ < Cb ; Cx ; Cy M/m
@@ -144,14 +156,15 @@ function applyWheelStep(): void {
   if (pendingWheelDelta === 0) return;
 
   const ui = useUiStore.getState();
-  if (ui.focusedPanel !== 'source') {
+  if (ui.focusedPanel !== "source") {
     pendingWheelDelta = 0;
     return;
   }
 
   // Drain in small chunks to keep motion smooth and predictable even when
   // trackpad momentum delivers bursts of events in one tick.
-  const step = Math.sign(pendingWheelDelta) * Math.min(Math.abs(pendingWheelDelta), 2);
+  const step =
+    Math.sign(pendingWheelDelta) * Math.min(Math.abs(pendingWheelDelta), 2);
   pendingWheelDelta -= step;
 
   const maxLine = Math.max(1, ui.sourceLines.length);
@@ -176,7 +189,7 @@ function onRawStdin(chunk: Buffer): void {
   }
 }
 
-process.stdin.on('data', onRawStdin);
+process.stdin.on("data", onRawStdin);
 
 // Stop the terminal from doing anything native (scrollback, text selection)
 // with mouse/trackpad input while this full-screen app owns the screen --
@@ -200,9 +213,9 @@ process.stdin.on('data', onRawStdin);
 //    click-drag text selection stops working while this app is running;
 //    most terminals (Terminal.app/iTerm2 included) let you hold Option
 //    while dragging to select text anyway, bypassing app mouse capture.
-process.stdout.write('\x1b[?1007h\x1b[?1000h\x1b[?1006h');
+process.stdout.write("\x1b[?1007h\x1b[?1000h\x1b[?1006h");
 function disableScrollCapture(): void {
-  process.stdout.write('\x1b[?1006l\x1b[?1000l\x1b[?1007l');
+  process.stdout.write("\x1b[?1006l\x1b[?1000l\x1b[?1007l");
 }
 
 async function closeLog(): Promise<void> {
@@ -213,7 +226,9 @@ async function closeLog(): Promise<void> {
       logFlushTimer = undefined;
     }
     await flushLogQueue(true);
-    await logHandle.write(`=== dbg session ended ${new Date().toISOString()} ===\n`);
+    await logHandle.write(
+      `=== dbg session ended ${new Date().toISOString()} ===\n`,
+    );
     await logHandle.close();
     logHandle = undefined;
   } catch {
@@ -227,24 +242,28 @@ async function shutdown(): Promise<void> {
   unsubscribeOutput();
   unsubscribeDapLog();
   unsubscribeSnapshot();
-  process.stdin.off('data', onRawStdin);
+  process.stdin.off("data", onRawStdin);
   if (wheelTimer) clearTimeout(wheelTimer);
   disableScrollCapture();
   await session.terminate().catch(() => undefined);
   await closeLog();
   process.exit(0);
 }
-process.on('SIGINT', () => void shutdown());
-process.on('SIGTERM', () => void shutdown());
-process.on('uncaughtException', async (err) => {
+process.on("SIGINT", () => void shutdown());
+process.on("SIGTERM", () => void shutdown());
+process.on("uncaughtException", async (err) => {
   disableScrollCapture();
-  process.stderr.write(`dbg: uncaught exception: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`);
+  process.stderr.write(
+    `dbg: uncaught exception: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n`,
+  );
   await closeLog();
   process.exit(1);
 });
-process.on('unhandledRejection', async (reason) => {
+process.on("unhandledRejection", async (reason) => {
   disableScrollCapture();
-  process.stderr.write(`dbg: unhandled rejection: ${reason instanceof Error ? reason.stack ?? reason.message : String(reason)}\n`);
+  process.stderr.write(
+    `dbg: unhandled rejection: ${reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)}\n`,
+  );
   await closeLog();
   process.exit(1);
 });
@@ -253,7 +272,7 @@ await waitUntilExit();
 unsubscribeOutput();
 unsubscribeDapLog();
 unsubscribeSnapshot();
-process.stdin.off('data', onRawStdin);
+process.stdin.off("data", onRawStdin);
 if (wheelTimer) clearTimeout(wheelTimer);
 disableScrollCapture();
 await closeLog();

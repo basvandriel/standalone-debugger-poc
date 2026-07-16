@@ -1,9 +1,9 @@
-import { randomUUID } from 'node:crypto';
-import { access } from 'node:fs/promises';
-import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { DapClient } from '../dap/DapClient.js';
-import { spawnAdapter } from '../dap/spawnAdapter.js';
-import type { AdapterDefinition } from '../adapters/types.js';
+import { randomUUID } from "node:crypto";
+import { access } from "node:fs/promises";
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import { DapClient } from "../dap/DapClient.js";
+import { spawnAdapter } from "../dap/spawnAdapter.js";
+import type { AdapterDefinition } from "../adapters/types.js";
 import type {
   BreakpointDescriptor,
   DapLogDirection,
@@ -16,8 +16,8 @@ import type {
   StackFrameDescriptor,
   ThreadDescriptor,
   VariableNode,
-  WatchDescriptor
-} from '../../shared/types.js';
+  WatchDescriptor,
+} from "../../shared/types.js";
 
 export interface DebugSessionOptions {
   adapterId: string;
@@ -61,7 +61,7 @@ export class DebugSession {
   private child?: ChildProcessWithoutNullStreams;
   private launchPromise?: Promise<unknown>;
 
-  private phase: SessionPhase = 'idle';
+  private phase: SessionPhase = "idle";
   private errorMessage?: string;
 
   private readonly breakpointLines = new Map<string, number[]>();
@@ -75,13 +75,15 @@ export class DebugSession {
   private readonly variablesByRef = new Map<number, VariableNode[]>();
   private watches: WatchDescriptor[] = [];
 
-  private readonly snapshotListeners = new Set<(snapshot: SessionSnapshot) => void>();
+  private readonly snapshotListeners = new Set<
+    (snapshot: SessionSnapshot) => void
+  >();
   private readonly outputListeners = new Set<(entry: OutputEntry) => void>();
   private readonly dapLogListeners = new Set<(entry: DapLogEntry) => void>();
 
   constructor(
     private readonly options: DebugSessionOptions,
-    private readonly adapter: AdapterDefinition
+    private readonly adapter: AdapterDefinition,
   ) {}
 
   onSnapshot(cb: (snapshot: SessionSnapshot) => void): Unsubscribe {
@@ -104,13 +106,15 @@ export class DebugSession {
   }
 
   async start(): Promise<void> {
-    this.phase = 'initializing';
+    this.phase = "initializing";
     this.emitSnapshot();
 
     try {
       await access(this.options.programPath);
     } catch {
-      this.handleFatalError(new Error(`program binary does not exist: ${this.options.programPath}`));
+      this.handleFatalError(
+        new Error(`program binary does not exist: ${this.options.programPath}`),
+      );
       return;
     }
 
@@ -124,12 +128,16 @@ export class DebugSession {
     // even after the handshake has already won.
     let timeoutHandle: NodeJS.Timeout | undefined;
     const timeout = new Promise<never>((_, reject) => {
-      timeoutHandle = setTimeout(() => reject(new Error('debug adapter handshake timed out after 20000ms')), 20_000);
+      timeoutHandle = setTimeout(
+        () =>
+          reject(new Error("debug adapter handshake timed out after 20000ms")),
+        20_000,
+      );
     });
 
     try {
       await Promise.race([this.runHandshake(), timeout]);
-      this.phase = 'configuring';
+      this.phase = "configuring";
       this.emitSnapshot();
     } catch (err) {
       this.handleFatalError(err);
@@ -142,53 +150,67 @@ export class DebugSession {
     const executablePath = await this.adapter.resolveExecutable();
     const child = spawnAdapter(executablePath, this.adapter.spawnArgs);
     this.child = child;
-    child.on('exit', (code, signal) => this.handleAdapterExit(code, signal));
-    child.on('error', (err) => this.handleFatalError(err));
-    child.stderr.on('data', (chunk: Buffer) => {
-      this.logDap('incoming', { stderr: chunk.toString('utf8') });
+    child.on("exit", (code, signal) => this.handleAdapterExit(code, signal));
+    child.on("error", (err) => this.handleFatalError(err));
+    child.stderr.on("data", (chunk: Buffer) => {
+      this.logDap("incoming", { stderr: chunk.toString("utf8") });
     });
 
     const client = new DapClient(child.stdout, child.stdin);
     this.client = client;
-    client.on('*', (msg: unknown) => this.logDap('incoming', msg));
-    client.on('output', (body: { category?: string; output: string }) => this.handleOutputEvent(body));
-    client.on('stopped', (body: { threadId?: number; reason: string }) => void this.handleStopped(body));
-    client.on('continued', () => this.handleContinued());
-    client.on('exited', () => this.handleExited());
-    client.on('terminated', () => this.handleTerminated());
-    client.on('breakpoint', (body: { breakpoint: { id?: number; line?: number; verified: boolean } }) =>
-      this.handleBreakpointEvent(body)
+    client.on("*", (msg: unknown) => this.logDap("incoming", msg));
+    client.on("output", (body: { category?: string; output: string }) =>
+      this.handleOutputEvent(body),
+    );
+    client.on(
+      "stopped",
+      (body: { threadId?: number; reason: string }) =>
+        void this.handleStopped(body),
+    );
+    client.on("continued", () => this.handleContinued());
+    client.on("exited", () => this.handleExited());
+    client.on("terminated", () => this.handleTerminated());
+    client.on(
+      "breakpoint",
+      (body: {
+        breakpoint: { id?: number; line?: number; verified: boolean };
+      }) => this.handleBreakpointEvent(body),
     );
 
-    await this.sendRequest('initialize', {
-      clientID: 'dbg',
-      clientName: 'dbg',
+    await this.sendRequest("initialize", {
+      clientID: "dbg",
+      clientName: "dbg",
       adapterID: this.adapter.id,
-      pathFormat: 'path',
+      pathFormat: "path",
       linesStartAt1: true,
       columnsStartAt1: true,
       supportsVariableType: true,
       supportsRunInTerminalRequest: false,
       supportsInvalidatedEvent: true,
-      locale: 'en-US'
+      locale: "en-US",
     });
 
     // Real lldb-dap only emits `initialized` once it starts processing
     // `launch`, not right after `initialize` responds (confirmed
     // empirically -- see scripts/smoke-test.ts). Fire launch first.
-    const initializedPromise = new Promise<void>((resolve) => client.once('initialized', () => resolve()));
+    const initializedPromise = new Promise<void>((resolve) =>
+      client.once("initialized", () => resolve()),
+    );
     const launchArgs = this.adapter.buildLaunchArgs({
       program: this.options.programPath,
-      cwd: this.options.cwd
+      cwd: this.options.cwd,
     });
-    const launchRequestPromise = this.sendRequest('launch', launchArgs);
+    const launchRequestPromise = this.sendRequest("launch", launchArgs);
     this.launchPromise = launchRequestPromise;
 
     // If launch fails outright (e.g. bad --program path), `initialized`
     // will never arrive -- propagate that failure instead of hanging.
     // If launch succeeds, this branch just never resolves and the real
     // `initialized` event wins the race normally.
-    await Promise.race([initializedPromise, launchRequestPromise.then(() => new Promise<void>(() => {}))]);
+    await Promise.race([
+      initializedPromise,
+      launchRequestPromise.then(() => new Promise<void>(() => {})),
+    ]);
   }
 
   async toggleBreakpoint(file: string, line: number): Promise<void> {
@@ -201,18 +223,25 @@ export class DebugSession {
     await this.setBreakpointsForFile(file, next);
   }
 
-  private async setBreakpointsForFile(file: string, lines: number[]): Promise<void> {
+  private async setBreakpointsForFile(
+    file: string,
+    lines: number[],
+  ): Promise<void> {
     const response = await this.sendRequest<
       { source: { path: string }; breakpoints: { line: number }[] },
       { breakpoints: { line: number; verified: boolean; id?: number }[] }
-    >('setBreakpoints', {
+    >("setBreakpoints", {
       source: { path: file },
-      breakpoints: lines.map((l) => ({ line: l }))
+      breakpoints: lines.map((l) => ({ line: l })),
     });
 
     this.breakpoints.set(
       file,
-      response.breakpoints.map((b) => ({ line: b.line, verified: b.verified, id: b.id }))
+      response.breakpoints.map((b) => ({
+        line: b.line,
+        verified: b.verified,
+        id: b.id,
+      })),
     );
     this.emitSnapshot();
   }
@@ -226,14 +255,14 @@ export class DebugSession {
    * they belonged to a now-dead adapter process).
    */
   async restart(): Promise<void> {
-    if (this.phase !== 'terminated' && this.phase !== 'error') return;
+    if (this.phase !== "terminated" && this.phase !== "error") return;
     if (this.child && !this.child.killed) {
       // Detach first -- otherwise this deliberate kill's async 'exit' event
       // fires after the new child (spawned below by start()) is already
       // live, and handleAdapterExit would clobber the *new* session back
       // into 'error' since nothing else marks this exit as expected.
-      this.child.removeAllListeners('exit');
-      this.child.removeAllListeners('error');
+      this.child.removeAllListeners("exit");
+      this.child.removeAllListeners("error");
       this.client?.dispose();
       this.child.kill();
     }
@@ -242,7 +271,11 @@ export class DebugSession {
     this.launchPromise = undefined;
     this.errorMessage = undefined;
     this.breakpoints.clear();
-    this.watches = this.watches.map((w) => ({ ...w, value: undefined, error: undefined }));
+    this.watches = this.watches.map((w) => ({
+      ...w,
+      value: undefined,
+      error: undefined,
+    }));
 
     await this.start();
     if (!this.isSessionLive()) return; // start() already reported the failure via handleFatalError.
@@ -253,41 +286,42 @@ export class DebugSession {
   }
 
   async beginExecution(): Promise<void> {
-    if (this.phase !== 'configuring') return;
-    await this.sendRequest('configurationDone');
-    this.phase = 'running';
+    if (this.phase !== "configuring") return;
+    await this.sendRequest("configurationDone");
+    this.phase = "running";
     this.emitSnapshot();
   }
 
   async continueExecution(): Promise<void> {
-    if (this.phase !== 'stopped' || this.selectedThreadId === undefined) return;
+    if (this.phase !== "stopped" || this.selectedThreadId === undefined) return;
     const threadId = this.selectedThreadId;
-    this.phase = 'running';
+    this.phase = "running";
     this.emitSnapshot();
-    await this.sendRequest('continue', { threadId });
+    await this.sendRequest("continue", { threadId });
   }
 
   async stepOver(): Promise<void> {
-    await this.step('next');
+    await this.step("next");
   }
 
   async stepIn(): Promise<void> {
-    await this.step('stepIn');
+    await this.step("stepIn");
   }
 
   async stepOut(): Promise<void> {
-    await this.step('stepOut');
+    await this.step("stepOut");
   }
 
-  private async step(command: 'next' | 'stepIn' | 'stepOut'): Promise<void> {
-    if (this.phase !== 'stopped' || this.selectedThreadId === undefined) return;
+  private async step(command: "next" | "stepIn" | "stepOut"): Promise<void> {
+    if (this.phase !== "stopped" || this.selectedThreadId === undefined) return;
     // The response only acknowledges acceptance -- actual state refresh
     // happens in handleStopped once the follow-up `stopped` event arrives.
     await this.sendRequest(command, { threadId: this.selectedThreadId });
   }
 
   async selectFrame(frameId: number): Promise<void> {
-    if (!this.isSessionLive() || !this.stack.some((f) => f.id === frameId)) return;
+    if (!this.isSessionLive() || !this.stack.some((f) => f.id === frameId))
+      return;
     this.selectedFrameId = frameId;
     if (!this.scopesByFrame.has(frameId)) {
       await this.loadFrameScopes(frameId);
@@ -300,10 +334,10 @@ export class DebugSession {
     if (cached) return cached;
     if (!this.isSessionLive()) return [];
 
-    const response = await this.sendRequest<{ variablesReference: number }, { variables: DapVariable[] }>(
-      'variables',
-      { variablesReference }
-    );
+    const response = await this.sendRequest<
+      { variablesReference: number },
+      { variables: DapVariable[] }
+    >("variables", { variablesReference });
     const variables = response.variables.map(toVariableNode);
     this.variablesByRef.set(variablesReference, variables);
     this.emitSnapshot();
@@ -336,7 +370,12 @@ export class DebugSession {
       timeoutHandle = setTimeout(resolve, 3000);
     });
 
-    await Promise.race([this.sendRequest('disconnect', { terminateDebuggee: true }).catch(() => undefined), timeout]);
+    await Promise.race([
+      this.sendRequest("disconnect", { terminateDebuggee: true }).catch(
+        () => undefined,
+      ),
+      timeout,
+    ]);
     clearTimeout(timeoutHandle);
 
     client.dispose();
@@ -344,47 +383,72 @@ export class DebugSession {
   }
 
   private assertClient(): DapClient {
-    if (!this.client) throw new Error('DebugSession not started');
+    if (!this.client) throw new Error("DebugSession not started");
     return this.client;
   }
 
   /** False once the adapter is known dead/gone -- avoids issuing requests that would hang forever unanswered. */
   private isSessionLive(): boolean {
-    return this.phase !== 'error' && this.phase !== 'terminated' && this.phase !== 'idle';
+    return (
+      this.phase !== "error" &&
+      this.phase !== "terminated" &&
+      this.phase !== "idle"
+    );
   }
 
-  private async sendRequest<TArgs = unknown, TBody = unknown>(command: string, args?: TArgs): Promise<TBody> {
-    this.logDap('outgoing', { command, arguments: args });
+  private async sendRequest<TArgs = unknown, TBody = unknown>(
+    command: string,
+    args?: TArgs,
+  ): Promise<TBody> {
+    this.logDap("outgoing", { command, arguments: args });
     return this.assertClient().sendRequest<TArgs, TBody>(command, args);
   }
 
   private async loadFrameScopes(frameId: number): Promise<void> {
-    const response = await this.sendRequest<{ frameId: number }, { scopes: DapScope[] }>('scopes', { frameId });
+    const response = await this.sendRequest<
+      { frameId: number },
+      { scopes: DapScope[] }
+    >("scopes", { frameId });
     this.scopesByFrame.set(
       frameId,
-      response.scopes.map((s) => ({ name: s.name, variablesReference: s.variablesReference, expensive: s.expensive }))
+      response.scopes.map((s) => ({
+        name: s.name,
+        variablesReference: s.variablesReference,
+        expensive: s.expensive,
+      })),
     );
     for (const scope of response.scopes) {
-      if (scope.variablesReference === 0 || this.variablesByRef.has(scope.variablesReference)) continue;
-      const varsResponse = await this.sendRequest<{ variablesReference: number }, { variables: DapVariable[] }>(
-        'variables',
-        { variablesReference: scope.variablesReference }
+      if (
+        scope.variablesReference === 0 ||
+        this.variablesByRef.has(scope.variablesReference)
+      )
+        continue;
+      const varsResponse = await this.sendRequest<
+        { variablesReference: number },
+        { variables: DapVariable[] }
+      >("variables", { variablesReference: scope.variablesReference });
+      this.variablesByRef.set(
+        scope.variablesReference,
+        varsResponse.variables.map(toVariableNode),
       );
-      this.variablesByRef.set(scope.variablesReference, varsResponse.variables.map(toVariableNode));
     }
   }
 
   private async evaluateWatch(watch: WatchDescriptor): Promise<void> {
-    if (this.phase !== 'stopped' || this.selectedFrameId === undefined) {
+    if (this.phase !== "stopped" || this.selectedFrameId === undefined) {
       watch.value = undefined;
-      watch.error = 'not stopped';
+      watch.error = "not stopped";
       return;
     }
     try {
       const response = await this.sendRequest<
         { expression: string; frameId: number; context: string },
         { result: string; type?: string }
-      >('evaluate', { expression: watch.expression, frameId: this.selectedFrameId, context: 'watch' });
+      >("evaluate", {
+        expression: watch.expression,
+        frameId: this.selectedFrameId,
+        context: "watch",
+      });
       watch.value = response.result;
       watch.type = response.type;
       watch.error = undefined;
@@ -399,13 +463,19 @@ export class DebugSession {
     }
   }
 
-  private async handleStopped(body: { threadId?: number; reason: string }): Promise<void> {
-    this.phase = 'stopped';
+  private async handleStopped(body: {
+    threadId?: number;
+    reason: string;
+  }): Promise<void> {
+    this.phase = "stopped";
     this.scopesByFrame.clear();
     this.variablesByRef.clear();
 
     try {
-      const threadsResponse = await this.sendRequest<undefined, { threads: ThreadDescriptor[] }>('threads');
+      const threadsResponse = await this.sendRequest<
+        undefined,
+        { threads: ThreadDescriptor[] }
+      >("threads");
       this.threads = threadsResponse.threads;
       this.selectedThreadId = body.threadId ?? threadsResponse.threads[0]?.id;
 
@@ -413,13 +483,17 @@ export class DebugSession {
         const stackResponse = await this.sendRequest<
           { threadId: number; startFrame: number; levels: number },
           { stackFrames: DapStackFrame[] }
-        >('stackTrace', { threadId: this.selectedThreadId, startFrame: 0, levels: 20 });
+        >("stackTrace", {
+          threadId: this.selectedThreadId,
+          startFrame: 0,
+          levels: 20,
+        });
         this.stack = stackResponse.stackFrames.map((f) => ({
           id: f.id,
           name: f.name,
           line: f.line,
           column: f.column,
-          sourcePath: f.source?.path
+          sourcePath: f.source?.path,
         }));
         this.selectedFrameId = this.stack[0]?.id;
         if (this.selectedFrameId !== undefined) {
@@ -440,7 +514,7 @@ export class DebugSession {
   }
 
   private handleContinued(): void {
-    this.phase = 'running';
+    this.phase = "running";
     this.emitSnapshot();
   }
 
@@ -449,17 +523,23 @@ export class DebugSession {
   }
 
   private handleTerminated(): void {
-    this.phase = 'terminated';
+    this.phase = "terminated";
     this.clearRuntimeState();
     this.emitSnapshot();
   }
 
-  private handleBreakpointEvent(body: { breakpoint: { id?: number; line?: number; verified: boolean } }): void {
+  private handleBreakpointEvent(body: {
+    breakpoint: { id?: number; line?: number; verified: boolean };
+  }): void {
     for (const [file, list] of this.breakpoints) {
       const idx = list.findIndex((b) => b.id === body.breakpoint.id);
       if (idx === -1) continue;
       const existing = list[idx]!;
-      list[idx] = { ...existing, verified: body.breakpoint.verified, line: body.breakpoint.line ?? existing.line };
+      list[idx] = {
+        ...existing,
+        verified: body.breakpoint.verified,
+        line: body.breakpoint.line ?? existing.line,
+      };
       this.breakpoints.set(file, [...list]);
       this.emitSnapshot();
       return;
@@ -468,23 +548,34 @@ export class DebugSession {
 
   private handleOutputEvent(body: { category?: string; output: string }): void {
     const category: OutputCategory =
-      body.category === 'stderr' ? 'stderr' : body.category === 'stdout' ? 'stdout' : 'console';
-    const entry: OutputEntry = { category, text: body.output, timestamp: Date.now() };
+      body.category === "stderr"
+        ? "stderr"
+        : body.category === "stdout"
+          ? "stdout"
+          : "console";
+    const entry: OutputEntry = {
+      category,
+      text: body.output,
+      timestamp: Date.now(),
+    };
     for (const listener of this.outputListeners) listener(entry);
   }
 
-  private handleAdapterExit(code: number | null, signal: NodeJS.Signals | null): void {
+  private handleAdapterExit(
+    code: number | null,
+    signal: NodeJS.Signals | null,
+  ): void {
     // Don't clobber a more specific diagnostic (e.g. a bad --program path)
     // with this generic message if we're already in a terminal state.
-    if (this.phase === 'terminated' || this.phase === 'error') return;
-    this.phase = 'error';
+    if (this.phase === "terminated" || this.phase === "error") return;
+    this.phase = "error";
     this.errorMessage = `adapter process exited unexpectedly (code=${code}, signal=${signal})`;
     this.clearRuntimeState();
     this.emitSnapshot();
   }
 
   private handleFatalError(err: unknown): void {
-    this.phase = 'error';
+    this.phase = "error";
     this.errorMessage = err instanceof Error ? err.message : String(err);
     this.clearRuntimeState();
     this.emitSnapshot();
@@ -504,7 +595,11 @@ export class DebugSession {
     this.selectedFrameId = undefined;
     this.scopesByFrame.clear();
     this.variablesByRef.clear();
-    this.watches = this.watches.map((w) => ({ ...w, value: undefined, error: 'not running' }));
+    this.watches = this.watches.map((w) => ({
+      ...w,
+      value: undefined,
+      error: "not running",
+    }));
   }
 
   private logDap(direction: DapLogDirection, payload: unknown): void {
@@ -524,7 +619,10 @@ export class DebugSession {
     const variablesByRef: Record<number, VariableNode[]> = {};
     for (const [ref, vars] of this.variablesByRef) variablesByRef[ref] = vars;
 
-    const scopes = this.selectedFrameId !== undefined ? (this.scopesByFrame.get(this.selectedFrameId) ?? []) : [];
+    const scopes =
+      this.selectedFrameId !== undefined
+        ? (this.scopesByFrame.get(this.selectedFrameId) ?? [])
+        : [];
 
     return {
       phase: this.phase,
@@ -539,11 +637,16 @@ export class DebugSession {
       selectedFrameId: this.selectedFrameId,
       scopes,
       watches: this.watches,
-      variablesByRef
+      variablesByRef,
     };
   }
 }
 
 function toVariableNode(v: DapVariable): VariableNode {
-  return { name: v.name, value: v.value, type: v.type, variablesReference: v.variablesReference };
+  return {
+    name: v.name,
+    value: v.value,
+    type: v.type,
+    variablesReference: v.variablesReference,
+  };
 }

@@ -1,11 +1,11 @@
 export type SessionPhase =
-  | 'idle'
-  | 'initializing'
-  | 'configuring'
-  | 'running'
-  | 'stopped'
-  | 'terminated'
-  | 'error';
+  | "idle"
+  | "initializing"
+  | "configuring"
+  | "running"
+  | "stopped"
+  | "terminated"
+  | "error";
 
 export interface BreakpointDescriptor {
   line: number;
@@ -47,7 +47,7 @@ export interface WatchDescriptor {
   error?: string;
 }
 
-export type OutputCategory = 'stdout' | 'stderr' | 'console';
+export type OutputCategory = "stdout" | "stderr" | "console";
 
 export interface OutputEntry {
   category: OutputCategory;
@@ -55,7 +55,7 @@ export interface OutputEntry {
   timestamp: number;
 }
 
-export type DapLogDirection = 'outgoing' | 'incoming';
+export type DapLogDirection = "outgoing" | "incoming";
 
 export interface DapLogEntry {
   direction: DapLogDirection;
@@ -89,23 +89,23 @@ export interface CliOptions {
 }
 
 export const IPC = {
-  GET_INITIAL_STATE: 'dbg:getInitialState',
-  READ_SOURCE_FILE: 'dbg:readSourceFile',
-  TOGGLE_BREAKPOINT: 'dbg:toggleBreakpoint',
-  BEGIN_EXECUTION: 'dbg:beginExecution',
-  CONTINUE_EXECUTION: 'dbg:continueExecution',
-  STEP_OVER: 'dbg:stepOver',
-  STEP_IN: 'dbg:stepIn',
-  STEP_OUT: 'dbg:stepOut',
-  SELECT_FRAME: 'dbg:selectFrame',
-  EXPAND_VARIABLE: 'dbg:expandVariable',
-  ADD_WATCH: 'dbg:addWatch',
-  REMOVE_WATCH: 'dbg:removeWatch',
-  TERMINATE: 'dbg:terminate',
-  RESTART: 'dbg:restart',
-  RENDERER_READY: 'dbg:rendererReady',
+  GET_INITIAL_STATE: "dbg:getInitialState",
+  READ_SOURCE_FILE: "dbg:readSourceFile",
+  TOGGLE_BREAKPOINT: "dbg:toggleBreakpoint",
+  BEGIN_EXECUTION: "dbg:beginExecution",
+  CONTINUE_EXECUTION: "dbg:continueExecution",
+  STEP_OVER: "dbg:stepOver",
+  STEP_IN: "dbg:stepIn",
+  STEP_OUT: "dbg:stepOut",
+  SELECT_FRAME: "dbg:selectFrame",
+  EXPAND_VARIABLE: "dbg:expandVariable",
+  ADD_WATCH: "dbg:addWatch",
+  REMOVE_WATCH: "dbg:removeWatch",
+  TERMINATE: "dbg:terminate",
+  RESTART: "dbg:restart",
+  RENDERER_READY: "dbg:rendererReady",
 
-  SNAPSHOT: 'dbg:snapshot',
-  OUTPUT: 'dbg:output',
-  DAP_LOG: 'dbg:dapLog'
+  SNAPSHOT: "dbg:snapshot",
+  OUTPUT: "dbg:output",
+  DAP_LOG: "dbg:dapLog",
 } as const;
