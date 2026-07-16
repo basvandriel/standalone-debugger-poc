@@ -54,7 +54,10 @@
       "Bash(chmod +x /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/pty-timing.exp)",
       "Bash(/private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/pty-timing.exp)",
       "Bash(time npx tsx /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/timing-test5.ts)",
-      "Bash(sed -i '' 's#spawn npx tsx#spawn ./node_modules/.bin/tsx#' /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/pty-timing.exp)"
+      "Bash(sed -i '' 's#spawn npx tsx#spawn ./node_modules/.bin/tsx#' /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/pty-timing.exp)",
+      "Bash(grep -v \"layoutBudget.ts$\")",
+      "Bash(chmod +x /private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/scroll-check.exp)",
+      "Bash(/private/tmp/claude-501/-Users-bas-standalone-debugger-poc/e96747dd-6d76-49eb-bda0-82a24687a7fe/scratchpad/scroll-check.exp)"
     ],
     "additionalDirectories": [
       "/private/tmp",

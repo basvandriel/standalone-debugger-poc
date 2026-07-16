@@ -19,13 +19,13 @@ export function PanelFrame({ id, title, focused, contentHeight, children }: Pane
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
-      borderColor={focused ? COLORS.accent : COLORS.border}
+      borderStyle="round"
+      borderColor={focused ? COLORS.accent : COLORS.borderSubtle}
       flexShrink={0}
       width="100%"
     >
-      <Box paddingX={1} height={1} overflow="hidden">
-        <Text color={COLORS.fgDim} wrap="truncate-end">
+      <Box paddingX={1} height={1} overflow="hidden" backgroundColor={COLORS.panelHeader}>
+        <Text color={focused ? COLORS.accent : COLORS.fgDim} bold wrap="truncate-end">
           {collapsed ? '▸' : '▾'} {title}
         </Text>
       </Box>

@@ -18,9 +18,9 @@ export function WatchPanel({ snapshot }: WatchPanelProps) {
   }, [isFocused, selectedIndex]);
 
   return (
-    <Panel id="watch" title="watches" focused={isFocused} bottomBorder={false}>
+    <Panel id="watch" title="watches" focused={isFocused}>
       {snapshot.watches.length === 0 ? (
-        <div className="text-fg-dim">(none -- : then :watch &lt;expr&gt;)</div>
+        <div className="px-2 font-sans text-fg-dim">no watches — type : then watch &lt;expr&gt;</div>
       ) : (
         snapshot.watches.map((watch, idx) => {
           const isSelected = isFocused && idx === selectedIndex;
@@ -28,7 +28,7 @@ export function WatchPanel({ snapshot }: WatchPanelProps) {
             <div
               key={watch.id}
               ref={isSelected ? selectedRowRef : undefined}
-              className={`cursor-pointer truncate px-2 py-px hover:bg-hover ${isSelected ? 'bg-selection' : ''}`}
+              className={`mx-1 cursor-pointer truncate rounded-sm px-1.5 py-0.5 transition-colors hover:bg-hover ${isSelected ? 'bg-selection' : ''}`}
               onClick={() => window.dbg.removeWatch(watch.id)}
             >
               {watch.expression} <span className="text-fg-dim">=</span>{' '}

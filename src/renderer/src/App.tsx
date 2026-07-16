@@ -4,6 +4,7 @@ import { useUiStore } from '@shared/ui/useUiStore';
 import { useKeybindings } from './hooks/useKeybindings';
 import { Layout } from './components/Layout';
 import { highlightToLines } from './lib/highlightSource';
+import { BugIcon } from './components/icons';
 
 export function App() {
   const snapshot = useDbgStore((s) => s.snapshot);
@@ -77,7 +78,14 @@ export function App() {
 
   useKeybindings(snapshot);
 
-  if (!snapshot) return <div className="p-6 text-fg-dim">loading...</div>;
+  if (!snapshot) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2 bg-bg font-sans text-fg-dim">
+        <BugIcon width={20} height={20} className="animate-pulse text-accent" />
+        connecting to debug adapter…
+      </div>
+    );
+  }
 
   return <Layout snapshot={snapshot} output={output} dapLog={dapLog} highlightedLines={highlightedLines} />;
 }
