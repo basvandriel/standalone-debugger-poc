@@ -106,16 +106,27 @@ export class DebugSession {
     this.phase = 'initializing';
     this.emitSnapshot();
 
+    // Guards the whole handshake against any single step hanging forever
+    // (adapter spawn wedged, initialize/launch never answered, etc.) --
+    // without this, a stuck step would leave `start()` unsettled even
+    // though nothing external depends on that promise resolving. The timer
+    // must be cleared once the race settles either way: Promise.race never
+    // cancels the losing side, and a live setTimeout keeps the whole
+    // process's event loop alive (blocking process exit for up to 20s)
+    // even after the handshake has already won.
+    let timeoutHandle: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => reject(new Error('debug adapter handshake timed out after 20000ms')), 20_000);
+    });
+
     try {
-      // Guards the whole handshake against any single step hanging forever
-      // (adapter spawn wedged, initialize/launch never answered, etc.) --
-      // without this, a stuck step would leave `start()` unsettled even
-      // though nothing external depends on that promise resolving.
-      await Promise.race([this.runHandshake(), handshakeTimeout(20_000)]);
+      await Promise.race([this.runHandshake(), timeout]);
       this.phase = 'configuring';
       this.emitSnapshot();
     } catch (err) {
       this.handleFatalError(err);
+    } finally {
+      clearTimeout(timeoutHandle);
     }
   }
 
@@ -308,10 +319,17 @@ export class DebugSession {
     const child = this.child;
     if (!client || !child) return;
 
-    await Promise.race([
-      this.sendRequest('disconnect', { terminateDebuggee: true }).catch(() => undefined),
-      new Promise((resolve) => setTimeout(resolve, 3000))
-    ]);
+    // Same leftover-timer hazard as start()'s handshake guard: Promise.race
+    // doesn't cancel the losing side, so an uncleared setTimeout here would
+    // keep the whole process's event loop alive for up to 3s after this
+    // method already returned, even on the (typical) fast-disconnect path.
+    let timeoutHandle: NodeJS.Timeout | undefined;
+    const timeout = new Promise<void>((resolve) => {
+      timeoutHandle = setTimeout(resolve, 3000);
+    });
+
+    await Promise.race([this.sendRequest('disconnect', { terminateDebuggee: true }).catch(() => undefined), timeout]);
+    clearTimeout(timeoutHandle);
 
     client.dispose();
     if (!child.killed) child.kill();
@@ -520,10 +538,4 @@ export class DebugSession {
 
 function toVariableNode(v: DapVariable): VariableNode {
   return { name: v.name, value: v.value, type: v.type, variablesReference: v.variablesReference };
-}
-
-function handshakeTimeout(ms: number): Promise<never> {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(`debug adapter handshake timed out after ${ms}ms`)), ms);
-  });
 }
