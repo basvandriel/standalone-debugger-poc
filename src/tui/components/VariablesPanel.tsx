@@ -51,8 +51,8 @@ export function VariablesPanel({ snapshot, contentHeight }: VariablesPanelProps)
               overflow="hidden"
             >
               {row.isScopeHeader ? (
-                <Text color={COLORS.accent} bold wrap="truncate-end">
-                  {row.name}
+                <Text color={COLORS.fgDim} bold wrap="truncate-end">
+                  {row.name.toUpperCase()}
                 </Text>
               ) : (
                 <>

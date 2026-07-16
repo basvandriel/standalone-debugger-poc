@@ -36,7 +36,7 @@ export function VariablesPanel({ snapshot }: VariablesPanelProps) {
   return (
     <Panel id="variables" title="variables" focused={isFocused}>
       {rows.length === 0 ? (
-        <div className="text-fg-dim">{emptyStackMessage(snapshot.phase, ELECTRON_KEYS.startContinue)}</div>
+        <div className="px-2 font-sans text-fg-dim">{emptyStackMessage(snapshot.phase, ELECTRON_KEYS.startContinue)}</div>
       ) : (
         rows.map((row, idx) => {
           const isSelected = isFocused && idx === selectedIndex;
@@ -44,14 +44,14 @@ export function VariablesPanel({ snapshot }: VariablesPanelProps) {
             <div
               key={row.key}
               ref={isSelected ? selectedRowRef : undefined}
-              className={`cursor-pointer truncate px-2 py-px hover:bg-hover ${isSelected ? 'bg-selection' : ''} ${
-                row.isScopeHeader ? 'mt-1 cursor-default text-accent' : ''
+              className={`mx-1 cursor-pointer truncate rounded-sm px-1.5 py-0.5 transition-colors hover:bg-hover ${isSelected ? 'bg-selection' : ''} ${
+                row.isScopeHeader ? 'mt-1.5 cursor-default font-sans text-[10px] font-semibold tracking-wide text-fg-dim uppercase' : ''
               }`}
               style={{ paddingLeft: 8 + row.depth * 14 }}
               onClick={() => handleRowClick(row)}
             >
               {row.isScopeHeader ? (
-                <strong>{row.name}</strong>
+                <span>{row.name}</span>
               ) : (
                 <>
                   <span className="inline-block w-3 text-fg-dim">{row.expandable ? (row.expanded ? '▾' : '▸') : ' '}</span>

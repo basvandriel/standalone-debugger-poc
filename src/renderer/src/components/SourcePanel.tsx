@@ -44,7 +44,7 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
       bodyClassName="[font-variant-ligatures:none]"
     >
       {sourceLines.length === 0 ? (
-        <div className="text-fg-dim">(no source loaded)</div>
+        <div className="px-2 font-sans text-fg-dim">no source loaded</div>
       ) : (
         sourceLines.map((text, idx) => {
           const line = idx + 1;
@@ -55,18 +55,24 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
             <div
               key={line}
               ref={line === activeLine ? activeRowRef : undefined}
-              className={`flex whitespace-pre px-2 ${isCurrent ? 'bg-accent-dim' : ''} ${
+              className={`group flex whitespace-pre transition-colors ${isCurrent ? 'bg-accent-dim/70' : ''} ${
                 isCursor ? 'shadow-[inset_2px_0_0_var(--color-accent)]' : ''
               }`}
             >
               <span
-                className="w-3.5 flex-none cursor-pointer text-error hover:bg-hover"
+                className="flex w-4 flex-none cursor-pointer items-center justify-center transition-colors group-hover:bg-hover"
                 onClick={() => toggleBreakpointAt(line)}
               >
-                {bp ? (bp.verified ? '●' : '○') : ' '}
+                {bp ? (
+                  <span
+                    className={`h-2 w-2 rounded-full ${bp.verified ? 'bg-error' : 'border border-error bg-transparent'}`}
+                  />
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-transparent opacity-0 group-hover:opacity-30 group-hover:bg-fg-dim" />
+                )}
               </span>
               <span
-                className="w-8.5 flex-none cursor-pointer pr-2.5 text-right text-fg-dim hover:bg-hover"
+                className="w-8.5 flex-none cursor-pointer pr-2.5 text-right text-fg-dim transition-colors group-hover:bg-hover"
                 onClick={() => toggleBreakpointAt(line)}
               >
                 {line}

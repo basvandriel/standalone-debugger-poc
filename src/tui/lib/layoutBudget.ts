@@ -7,8 +7,18 @@ export interface LayoutBudget {
 }
 
 const STATUS_BAR_ROWS = 2;
-const CONSOLE_TOTAL_ROWS = 9; // includes its own 1-row title bar
 const PANEL_TITLE_ROWS = 1;
+// PanelFrame/OutputConsole/CommandBar all draw a real `borderStyle` box
+// around their content -- that's 2 extra rows (top+bottom border) on top of
+// whatever height their children report. Yoga sizes the border as additional
+// box height, not eaten from the content, so every "total rows a panel
+// consumes" calculation below must include this or the sum of all panels
+// silently exceeds the terminal height and the real terminal scrolls,
+// breaking the fixed full-screen layout (k9s/Claude Code never scroll).
+const BORDER_ROWS = 2;
+const PANEL_CHROME_ROWS = PANEL_TITLE_ROWS + BORDER_ROWS;
+const CONSOLE_TOTAL_ROWS = 9; // total incl. its own border + 1-row title bar
+const COMMAND_BAR_ROWS = BORDER_ROWS + 1; // border + single content row, no separate title
 const MIN_CONTENT_ROWS = 1;
 
 /**
@@ -22,16 +32,17 @@ export function computeLayoutBudget(
   commandBarOpen: boolean,
   collapsedPanels: ReadonlySet<FocusedPanel>
 ): LayoutBudget {
-  const commandBarRows = commandBarOpen ? 1 : 0;
+  const commandBarRows = commandBarOpen ? COMMAND_BAR_ROWS : 0;
   const mainRows = Math.max(0, terminalRows - STATUS_BAR_ROWS - CONSOLE_TOTAL_ROWS - commandBarRows);
 
   const sourceTotalRows = Math.round((mainRows * 3) / 5);
   const sideTotalRows = mainRows - sourceTotalRows;
-  const sourceContentRows = Math.max(MIN_CONTENT_ROWS, sourceTotalRows - PANEL_TITLE_ROWS);
+  const sourceContentRows = Math.max(MIN_CONTENT_ROWS, sourceTotalRows - PANEL_CHROME_ROWS);
 
   const sidePanels: Array<'stack' | 'variables' | 'watch'> = ['stack', 'variables', 'watch'];
   const expandedCount = sidePanels.filter((p) => !collapsedPanels.has(p)).length;
-  const collapsedRows = sidePanels.filter((p) => collapsedPanels.has(p)).length * PANEL_TITLE_ROWS;
+  // A collapsed panel still renders its border + title row, just no content.
+  const collapsedRows = sidePanels.filter((p) => collapsedPanels.has(p)).length * PANEL_CHROME_ROWS;
   const availableForExpanded = Math.max(0, sideTotalRows - collapsedRows);
   const perExpandedTotal = expandedCount > 0 ? Math.floor(availableForExpanded / expandedCount) : 0;
 
@@ -40,13 +51,13 @@ export function computeLayoutBudget(
     if (collapsedPanels.has(panel)) {
       sideColumns[panel] = 0;
     } else {
-      sideColumns[panel] = Math.max(MIN_CONTENT_ROWS, perExpandedTotal - PANEL_TITLE_ROWS);
+      sideColumns[panel] = Math.max(MIN_CONTENT_ROWS, perExpandedTotal - PANEL_CHROME_ROWS);
     }
   }
 
   return {
     sourceContentRows,
     sideColumns,
-    consoleContentRows: Math.max(MIN_CONTENT_ROWS, CONSOLE_TOTAL_ROWS - PANEL_TITLE_ROWS)
+    consoleContentRows: Math.max(MIN_CONTENT_ROWS, CONSOLE_TOTAL_ROWS - PANEL_CHROME_ROWS)
   };
 }

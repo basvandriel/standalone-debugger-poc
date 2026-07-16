@@ -21,7 +21,7 @@ export function CallStackPanel({ snapshot }: CallStackPanelProps) {
   return (
     <Panel id="stack" title="call stack" focused={isFocused}>
       {snapshot.stack.length === 0 ? (
-        <div className="text-fg-dim">{emptyStackMessage(snapshot.phase, ELECTRON_KEYS.startContinue)}</div>
+        <div className="px-2 font-sans text-fg-dim">{emptyStackMessage(snapshot.phase, ELECTRON_KEYS.startContinue)}</div>
       ) : (
         snapshot.stack.map((frame) => {
           const isSelected = frame.id === snapshot.selectedFrameId;
@@ -29,7 +29,7 @@ export function CallStackPanel({ snapshot }: CallStackPanelProps) {
             <div
               key={frame.id}
               ref={isSelected ? selectedRowRef : undefined}
-              className={`flex cursor-pointer truncate px-2 py-px hover:bg-hover ${isSelected ? 'bg-selection' : ''}`}
+              className={`mx-1 flex cursor-pointer truncate rounded-sm px-1.5 py-0.5 transition-colors hover:bg-hover ${isSelected ? 'bg-selection' : ''}`}
               onClick={() => window.dbg.selectFrame(frame.id)}
             >
               <span className={`w-3 flex-none ${isSelected ? 'text-accent' : ''}`}>{isSelected ? '▸' : ' '}</span>

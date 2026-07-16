@@ -6,6 +6,7 @@ import type { SessionPhase, SessionSnapshot } from '../../shared/types.js';
 import { useUiStore, type FocusedPanel } from '../../shared/ui/useUiStore.js';
 import { TUI_KEYS } from '../../shared/ui/keybindings.js';
 import { COLORS } from '../theme.js';
+import { Spinner } from './Spinner.js';
 
 interface StatusBarProps {
   snapshot: SessionSnapshot;
@@ -40,6 +41,16 @@ const PHASE_COLOR: Record<SessionPhase, string> = {
   error: COLORS.error
 };
 
+const PHASE_BADGE_BG: Record<SessionPhase, string> = {
+  idle: COLORS.panelHeader,
+  initializing: COLORS.panelHeader,
+  configuring: COLORS.accentDim,
+  running: COLORS.warnDim,
+  stopped: COLORS.successDim,
+  terminated: COLORS.panelHeader,
+  error: COLORS.errorDim
+};
+
 export function StatusBar({ snapshot }: StatusBarProps) {
   const focusedPanel = useUiStore((s) => s.focusedPanel);
   const currentFrame = snapshot.stack.find((f) => f.id === snapshot.selectedFrameId);
@@ -47,16 +58,26 @@ export function StatusBar({ snapshot }: StatusBarProps) {
 
   return (
     <Box flexDirection="column" flexShrink={0} width="100%">
-      <Box gap={2} width="100%" overflow="hidden">
-        <Box flexShrink={0}>
+      <Box gap={2} width="100%" overflow="hidden" paddingX={1}>
+        <Box flexShrink={0} gap={1}>
           <Text color={COLORS.accent} bold>
-            dbg :: {snapshot.adapterId}
+            ‣ dbg
           </Text>
+          <Text color={COLORS.fgDim}>{snapshot.adapterId}</Text>
         </Box>
-        <Box flexShrink={0}>
-          <Text color={PHASE_COLOR[snapshot.phase]} bold>
-            [{PHASE_LABEL[snapshot.phase].toUpperCase()}]
-          </Text>
+        <Box flexShrink={0} paddingX={1} backgroundColor={PHASE_BADGE_BG[snapshot.phase]}>
+          {snapshot.phase === 'initializing' ? (
+            <Box gap={1}>
+              <Spinner color={PHASE_COLOR[snapshot.phase]} />
+              <Text color={PHASE_COLOR[snapshot.phase]} bold>
+                {PHASE_LABEL[snapshot.phase].toUpperCase()}
+              </Text>
+            </Box>
+          ) : (
+            <Text color={PHASE_COLOR[snapshot.phase]} bold>
+              ● {PHASE_LABEL[snapshot.phase].toUpperCase()}
+            </Text>
+          )}
         </Box>
         {/* Only the dynamic-length path/thread/error info shrinks -- the
             labels above must always stay fully readable. */}

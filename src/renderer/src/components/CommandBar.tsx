@@ -34,24 +34,28 @@ export function CommandBar({ sourcePath }: CommandBarProps) {
   }
 
   return (
-    <div className="flex flex-none items-center border-t border-accent bg-panel-header px-2 py-1">
-      <span className="mr-1 text-accent">:</span>
-      <input
-        ref={inputRef}
-        className="flex-1 border-0 bg-transparent text-fg outline-none"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            close();
-          } else if (e.key === 'Enter') {
-            runCommand(value);
-            close();
-          }
-          e.stopPropagation();
-        }}
-        placeholder="watch <expr> | bp <line> | quit"
-      />
+    <div className="flex-none px-2 pb-2">
+      <div className="flex items-center gap-2 rounded-lg bg-panel-header px-3 py-2 shadow-elevated ring-1 ring-accent/50">
+        <span className="rounded-sm bg-accent-dim px-1.5 py-0.5 font-sans text-[10px] font-semibold text-accent">
+          CMD
+        </span>
+        <input
+          ref={inputRef}
+          className="flex-1 border-0 bg-transparent text-fg outline-none"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              close();
+            } else if (e.key === 'Enter') {
+              runCommand(value);
+              close();
+            }
+            e.stopPropagation();
+          }}
+          placeholder="watch <expr> | bp <line> | quit"
+        />
+      </div>
     </div>
   );
 }

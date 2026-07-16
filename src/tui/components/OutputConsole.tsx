@@ -39,23 +39,24 @@ export function OutputConsole({ output, dapLog, contentHeight }: OutputConsolePr
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
-      borderColor={isFocused ? COLORS.accent : COLORS.border}
+      borderStyle="round"
+      borderColor={isFocused ? COLORS.accent : COLORS.borderSubtle}
       flexShrink={0}
       width="100%"
     >
-      <Box paddingX={1} height={1} overflow="hidden">
-        <Text color={outputTab === 'program' ? COLORS.accent : COLORS.fgDim} bold={outputTab === 'program'} wrap="truncate-end">
-          program output
-        </Text>
+      <Box paddingX={1} height={1} overflow="hidden" gap={1} backgroundColor={COLORS.panelHeader}>
+        <Box backgroundColor={outputTab === 'program' ? COLORS.selectionBg : undefined} paddingX={1}>
+          <Text color={outputTab === 'program' ? COLORS.accent : COLORS.fgDim} bold={outputTab === 'program'} wrap="truncate-end">
+            program output
+          </Text>
+        </Box>
+        <Box backgroundColor={outputTab === 'dap' ? COLORS.selectionBg : undefined} paddingX={1}>
+          <Text color={outputTab === 'dap' ? COLORS.accent : COLORS.fgDim} bold={outputTab === 'dap'} wrap="truncate-end">
+            dap log
+          </Text>
+        </Box>
         <Text color={COLORS.fgDim} wrap="truncate-end">
-          {'  '}
-        </Text>
-        <Text color={outputTab === 'dap' ? COLORS.accent : COLORS.fgDim} bold={outputTab === 'dap'} wrap="truncate-end">
-          dap log
-        </Text>
-        <Text color={COLORS.fgDim} wrap="truncate-end">
-          {' (h/l to switch)'}
+          h/l to switch
         </Text>
       </Box>
       <Box flexDirection="column" height={contentHeight} overflow="hidden">

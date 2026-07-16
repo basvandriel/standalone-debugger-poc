@@ -16,19 +16,19 @@ interface LayoutProps {
 
 export function Layout({ snapshot, output, dapLog, highlightedLines }: LayoutProps) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-bg">
       <StatusBar snapshot={snapshot} />
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-3 border-r border-border">
+      <div className="flex min-h-0 flex-1 gap-2 p-2">
+        <div className="flex min-w-0 flex-3">
           <SourcePanel snapshot={snapshot} highlightedLines={highlightedLines} />
         </div>
-        <div className="flex min-w-0 flex-2 flex-col">
+        <div className="flex min-w-0 flex-2 flex-col gap-2">
           <CallStackPanel snapshot={snapshot} />
           <VariablesPanel snapshot={snapshot} />
           <WatchPanel snapshot={snapshot} />
         </div>
       </div>
-      <div className="flex h-50 flex-none border-t border-border">
+      <div className="flex h-50 flex-none px-2 pb-2">
         <OutputConsole output={output} dapLog={dapLog} />
       </div>
       <CommandBar sourcePath={snapshot.sourcePath} />

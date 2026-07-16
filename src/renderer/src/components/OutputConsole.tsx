@@ -44,32 +44,29 @@ export function OutputConsole({ output, dapLog }: OutputConsoleProps) {
   }, [output.length, dapLog.length, outputTab]);
 
   const title = (
-    <>
+    <span className="flex items-center gap-1 normal-case">
       <span
-        className={`cursor-pointer ${outputTab === 'program' ? 'font-bold text-accent' : 'text-fg-dim'}`}
+        className={`cursor-pointer rounded-sm px-1.5 py-0.5 transition-colors ${
+          outputTab === 'program' ? 'bg-selection text-accent' : 'text-fg-dim hover:text-fg'
+        }`}
         onClick={() => setOutputTab('program')}
       >
         program output
-      </span>{' '}
+      </span>
       <span
-        className={`cursor-pointer ${outputTab === 'dap' ? 'font-bold text-accent' : 'text-fg-dim'}`}
+        className={`cursor-pointer rounded-sm px-1.5 py-0.5 transition-colors ${
+          outputTab === 'dap' ? 'bg-selection text-accent' : 'text-fg-dim hover:text-fg'
+        }`}
         onClick={() => setOutputTab('dap')}
       >
         dap log
-      </span>{' '}
-      <span className="text-fg-dim">(←/→ to switch)</span>
-    </>
+      </span>
+      <span className="ml-1 text-fg-dim/70">←/→ to switch</span>
+    </span>
   );
 
   return (
-    <Panel
-      id="console"
-      title={title}
-      focused={isFocused}
-      bottomBorder={false}
-      bodyClassName="py-0.5 text-[12px]"
-      bodyRef={bodyRef}
-    >
+    <Panel id="console" title={title} focused={isFocused} bodyClassName="py-1 text-[12px]" bodyRef={bodyRef}>
       {outputTab === 'program'
         ? output.map((entry, idx) => (
             <div key={idx} className={`px-2 wrap-break-word whitespace-pre-wrap ${CATEGORY_CLASS[entry.category]}`}>
