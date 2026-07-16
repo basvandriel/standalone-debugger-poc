@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
 import type { SessionSnapshot } from '@shared/types';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@shared/ui/useUiStore';
 import { Panel } from './Panel';
 
 interface SourcePanelProps {
   snapshot: SessionSnapshot;
+  highlightedLines: string[] | undefined;
 }
 
-export function SourcePanel({ snapshot }: SourcePanelProps) {
+export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
   const sourceLines = useUiStore((s) => s.sourceLines);
-  const highlightedLines = useUiStore((s) => s.highlightedLines);
   const cursorLine = useUiStore((s) => s.cursorLine);
   const setCursorLine = useUiStore((s) => s.setCursorLine);
   const focusedPanel = useUiStore((s) => s.focusedPanel);
@@ -39,7 +39,7 @@ export function SourcePanel({ snapshot }: SourcePanelProps) {
   return (
     <Panel
       id="source"
-      title={`source -- ${snapshot.sourcePath}`}
+      title={snapshot.sourcePath.split('/').pop() ?? snapshot.sourcePath}
       focused={isFocused}
       bodyClassName="[font-variant-ligatures:none]"
     >

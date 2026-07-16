@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@shared/ui/useUiStore';
 
 interface CommandBarProps {
   sourcePath: string;

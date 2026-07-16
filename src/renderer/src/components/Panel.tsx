@@ -1,5 +1,5 @@
 import type { ReactNode, Ref } from 'react';
-import { useUiStore, type FocusedPanel } from '../store/useUiStore';
+import { useUiStore, type FocusedPanel } from '@shared/ui/useUiStore';
 
 interface PanelProps {
   id: FocusedPanel;

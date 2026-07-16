@@ -48,8 +48,12 @@ function flattenNodes(
   parentKey: string,
   out: FlatVariableRow[]
 ): void {
-  for (const node of nodes) {
-    const key = `${parentKey}/${node.name}`;
+  nodes.forEach((node, index) => {
+    // Index disambiguates siblings that share a name -- DAP debug info
+    // routinely has multiple same-named entries (e.g. several `<null>`
+    // fields, or overloaded/anonymous entries in low-level structures),
+    // and `node.name` alone is not guaranteed unique among siblings.
+    const key = `${parentKey}/${index}:${node.name}`;
     const expandable = node.variablesReference !== 0;
     const expanded = expandable && expandedRefs.has(node.variablesReference);
     out.push({
@@ -67,5 +71,5 @@ function flattenNodes(
       const children = variablesByRef[node.variablesReference] ?? [];
       flattenNodes(children, variablesByRef, expandedRefs, depth + 1, key, out);
     }
-  }
+  });
 }

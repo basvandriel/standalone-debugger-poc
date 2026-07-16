@@ -18,6 +18,7 @@ const api = {
   addWatch: (expression: string): Promise<void> => ipcRenderer.invoke(IPC.ADD_WATCH, expression),
   removeWatch: (id: string): Promise<void> => ipcRenderer.invoke(IPC.REMOVE_WATCH, id),
   terminate: (): Promise<void> => ipcRenderer.invoke(IPC.TERMINATE),
+  restart: (): Promise<void> => ipcRenderer.invoke(IPC.RESTART),
   notifyRendererReady: (): void => ipcRenderer.send(IPC.RENDERER_READY),
 
   onSnapshot(cb: (snapshot: SessionSnapshot) => void): () => void {

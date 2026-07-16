@@ -1,16 +1,18 @@
 import type { SessionPhase, SessionSnapshot } from '@shared/types';
-import { useUiStore, type FocusedPanel } from '../store/useUiStore';
+import { useUiStore, type FocusedPanel } from '@shared/ui/useUiStore';
+import { ELECTRON_KEYS } from '@shared/ui/keybindings';
 
 interface StatusBarProps {
   snapshot: SessionSnapshot;
 }
 
+const K = ELECTRON_KEYS;
 const HINTS: Record<FocusedPanel, string> = {
-  source: '↑/↓ move   F9 breakpoint   F5 start/continue   F10 step over   F11 step into   ⇧F11 step out   ⇧F5 stop   : cmd',
-  stack: '↑/↓ select frame   F5 start/continue   F10/F11/⇧F11 step   ⇧F5 stop   : cmd',
-  variables: '↑/↓ move   → expand   ← collapse   ⏎ toggle   ⇧F5 stop   : cmd',
-  watch: '↑/↓ move   Delete remove   ⇧F5 stop   : cmd',
-  console: '←/→ switch tab   ⇧F5 stop   : cmd'
+  source: `${K.moveUp}/${K.moveDown} move   ${K.toggleBreakpoint} breakpoint   ${K.startContinue} start/continue   ${K.stepOver} step over   ${K.stepIn} step into   ${K.stepOut} step out   ${K.stop} stop   ${K.commandBar} cmd`,
+  stack: `${K.moveUp}/${K.moveDown} select frame   ${K.startContinue} start/continue   ${K.stepOver}/${K.stepIn}/${K.stepOut} step   ${K.stop} stop   ${K.commandBar} cmd`,
+  variables: `${K.moveUp}/${K.moveDown} move   ${K.expand} expand   ${K.collapse} collapse   ${K.toggleEntry} toggle   ${K.stop} stop   ${K.commandBar} cmd`,
+  watch: `${K.moveUp}/${K.moveDown} move   ${K.removeWatch} remove   ${K.stop} stop   ${K.commandBar} cmd`,
+  console: `${K.switchTab} switch tab   ${K.stop} stop   ${K.commandBar} cmd`
 };
 
 const PHASE_LABEL: Record<SessionPhase, string> = {

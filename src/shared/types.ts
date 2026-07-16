@@ -101,6 +101,7 @@ export const IPC = {
   ADD_WATCH: 'dbg:addWatch',
   REMOVE_WATCH: 'dbg:removeWatch',
   TERMINATE: 'dbg:terminate',
+  RESTART: 'dbg:restart',
   RENDERER_READY: 'dbg:rendererReady',
 
   SNAPSHOT: 'dbg:snapshot',

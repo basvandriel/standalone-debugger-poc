@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { useDbgStore } from './store/useDbgStore';
-import { useUiStore } from './store/useUiStore';
+import { useEffect, useRef, useState } from 'react';
+import { useDbgStore } from '@shared/ui/useDbgStore';
+import { useUiStore } from '@shared/ui/useUiStore';
 import { useKeybindings } from './hooks/useKeybindings';
 import { Layout } from './components/Layout';
 import { highlightToLines } from './lib/highlightSource';
@@ -14,8 +14,11 @@ export function App() {
   const appendDapLog = useDbgStore((s) => s.appendDapLog);
 
   const setSourceLines = useUiStore((s) => s.setSourceLines);
-  const setHighlightedLines = useUiStore((s) => s.setHighlightedLines);
   const resetVariableExpansion = useUiStore((s) => s.resetVariableExpansion);
+
+  // DOM-specific (raw HTML from Shiki) -- stays local to this renderer
+  // rather than in the cross-frontend shared UI store.
+  const [highlightedLines, setHighlightedLines] = useState<string[] | undefined>(undefined);
 
   const loadedSourcePath = useRef<string | undefined>(undefined);
   const lastTopFrameId = useRef<number | undefined>(undefined);
@@ -76,5 +79,5 @@ export function App() {
 
   if (!snapshot) return <div className="p-6 text-fg-dim">loading...</div>;
 
-  return <Layout snapshot={snapshot} output={output} dapLog={dapLog} />;
+  return <Layout snapshot={snapshot} output={output} dapLog={dapLog} highlightedLines={highlightedLines} />;
 }
