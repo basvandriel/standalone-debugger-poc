@@ -1,9 +1,9 @@
-import { createHighlighterCore, type HighlighterCore } from 'shiki/core';
-import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
-import rust from '@shikijs/langs/rust';
-import c from '@shikijs/langs/c';
-import cpp from '@shikijs/langs/cpp';
-import darkPlus from '@shikijs/themes/dark-plus';
+import { createHighlighterCore, type HighlighterCore } from "shiki/core";
+import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
+import rust from "@shikijs/langs/rust";
+import c from "@shikijs/langs/c";
+import cpp from "@shikijs/langs/cpp";
+import darkPlus from "@shikijs/themes/dark-plus";
 
 export interface HighlightToken {
   content: string;
@@ -15,17 +15,17 @@ export interface HighlightToken {
 // avoids pulling in Shiki's full ~200-language registry and avoids WASM
 // asset loading entirely.
 const EXTENSION_TO_LANG: Record<string, string> = {
-  rs: 'rust',
-  c: 'c',
-  cpp: 'cpp',
-  cc: 'cpp',
-  cxx: 'cpp',
-  h: 'c',
-  hpp: 'cpp'
+  rs: "rust",
+  c: "c",
+  cpp: "cpp",
+  cc: "cpp",
+  cxx: "cpp",
+  h: "c",
+  hpp: "cpp",
 };
 
 function languageForPath(path: string): string | undefined {
-  const ext = path.split('.').pop()?.toLowerCase();
+  const ext = path.split(".").pop()?.toLowerCase();
   return ext ? EXTENSION_TO_LANG[ext] : undefined;
 }
 
@@ -35,7 +35,7 @@ function getHighlighter(): Promise<HighlighterCore> {
   highlighterPromise ??= createHighlighterCore({
     themes: [darkPlus],
     langs: [rust, c, cpp],
-    engine: createJavaScriptRegexEngine()
+    engine: createJavaScriptRegexEngine(),
   });
   return highlighterPromise;
 }
@@ -46,10 +46,16 @@ function getHighlighter(): Promise<HighlighterCore> {
  * for unsupported languages (only Rust matters for this POC's lldb-dap
  * target) so callers can render plain text instead.
  */
-export async function highlightToTokenLines(code: string, sourcePath: string): Promise<HighlightToken[][] | undefined> {
+export async function highlightToTokenLines(
+  code: string,
+  sourcePath: string,
+): Promise<HighlightToken[][] | undefined> {
   const lang = languageForPath(sourcePath);
   if (!lang) return undefined;
 
   const highlighter = await getHighlighter();
-  return highlighter.codeToTokensBase(code, { lang, theme: 'dark-plus' }) as HighlightToken[][];
+  return highlighter.codeToTokensBase(code, {
+    lang,
+    theme: "dark-plus",
+  }) as HighlightToken[][];
 }
