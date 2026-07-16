@@ -8,12 +8,13 @@ import { fileURLToPath } from 'node:url';
 import { spawnAdapter } from '../src/engine/dap/spawnAdapter.js';
 import { DapClient } from '../src/engine/dap/DapClient.js';
 import { lldbDapAdapter } from '../src/engine/adapters/lldbDap.js';
+import { getFixtureConfig } from './fixtures.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_DIR = path.join(__dirname, '..', 'fixtures', 'loop-demo');
-const PROGRAM = path.join(FIXTURE_DIR, 'target', 'debug', 'loop-demo');
-const SOURCE = path.join(FIXTURE_DIR, 'src', 'main.rs');
-const BREAKPOINT_LINE = 7; // `total += doubled as i64;`
+const FIXTURE = getFixtureConfig('loop-demo');
+const FIXTURE_DIR = FIXTURE.cwd;
+const PROGRAM = FIXTURE.program;
+const SOURCE = FIXTURE.source;
+const BREAKPOINT_LINE = FIXTURE.breakpointLine; // `total += doubled as i64;`
 
 function withTimeout<T>(promise: Promise<T>, label: string, ms = 10_000): Promise<T> {
   return new Promise<T>((resolve, reject) => {

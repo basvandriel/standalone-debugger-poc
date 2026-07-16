@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import { access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { parseCliOptions } from './cli.js';
 import { registerIpcHandlers } from './ipc.js';
 import { DebugSession } from '../engine/session/DebugSession.js';
-import { lldbDapAdapter } from '../engine/adapters/lldbDap.js';
+import { getAdapter, adapterById } from '../engine/adapters/index.js';
 import { IPC } from '../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,9 +19,17 @@ if (!cliOptions) {
 }
 
 async function bootstrap(options: NonNullable<ReturnType<typeof parseCliOptions>>): Promise<void> {
-  const adapter = options.adapter === lldbDapAdapter.id ? lldbDapAdapter : undefined;
+  const adapter = getAdapter(options.adapter);
   if (!adapter) {
-    console.error(`dbg: unsupported adapter "${options.adapter}" (only "lldb-dap" is available in this POC)`);
+    console.error(`dbg: unsupported adapter "${options.adapter}" (supported adapters: ${Object.keys(adapterById).join(', ')})`);
+    app.exit(1);
+    return;
+  }
+
+  try {
+    await access(options.program);
+  } catch {
+    console.error(`dbg: program binary does not exist: ${options.program}`);
     app.exit(1);
     return;
   }

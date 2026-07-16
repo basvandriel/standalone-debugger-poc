@@ -7,8 +7,6 @@
  * than only the engine underneath it.
  */
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { render } from 'ink-testing-library';
 import React from 'react';
 import { DebugSession } from '../../engine/session/DebugSession.js';
@@ -16,11 +14,12 @@ import { lldbDapAdapter } from '../../engine/adapters/lldbDap.js';
 import { App } from '../App.js';
 import { useUiStore } from '../../shared/ui/useUiStore.js';
 import { useDbgStore } from '../../shared/ui/useDbgStore.js';
+import { getFixtureConfig } from '../../../scripts/fixtures.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_DIR = path.join(__dirname, '..', '..', '..', 'fixtures', 'loop-demo');
-const PROGRAM = path.join(FIXTURE_DIR, 'target', 'debug', 'loop-demo');
-const SOURCE = path.join(FIXTURE_DIR, 'src', 'main.rs');
+const FIXTURE = getFixtureConfig('loop-demo');
+const FIXTURE_DIR = FIXTURE.cwd;
+const PROGRAM = FIXTURE.program;
+const SOURCE = FIXTURE.source;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

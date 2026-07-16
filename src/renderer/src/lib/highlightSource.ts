@@ -1,6 +1,8 @@
 import { createHighlighterCore, createCssVariablesTheme, type HighlighterCore } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
 import rust from '@shikijs/langs/rust';
+import c from '@shikijs/langs/c';
+import cpp from '@shikijs/langs/cpp';
 
 const CSS_VARIABLES_THEME = createCssVariablesTheme({ name: 'css-variables', variablePrefix: '--shiki-', fontStyle: true });
 
@@ -10,7 +12,13 @@ const CSS_VARIABLES_THEME = createCssVariablesTheme({ name: 'css-variables', var
 // code-splits into hundreds of unused chunks. Add more `@shikijs/langs/*`
 // imports here if this POC ever grows beyond Rust/lldb-dap.
 const EXTENSION_TO_LANG: Record<string, string> = {
-  rs: 'rust'
+  rs: 'rust',
+  c: 'c',
+  cpp: 'cpp',
+  cc: 'cpp',
+  cxx: 'cpp',
+  h: 'c',
+  hpp: 'cpp'
 };
 
 function languageForPath(path: string): string | undefined {
@@ -23,7 +31,7 @@ let highlighterPromise: Promise<HighlighterCore> | undefined;
 function getHighlighter(): Promise<HighlighterCore> {
   highlighterPromise ??= createHighlighterCore({
     themes: [CSS_VARIABLES_THEME],
-    langs: [rust],
+    langs: [rust, c, cpp],
     // WASM-free: avoids depending on WASM asset loading working correctly
     // inside Electron's sandboxed renderer, at a negligible accuracy cost
     // for highlighting a single small file.

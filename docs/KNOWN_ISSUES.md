@@ -2,10 +2,13 @@
 
 ## Scope limitations (by design, not bugs)
 
-- **Only one DAP adapter is wired up: Rust via `lldb-dap`.** The
+- **Only one DAP adapter is wired up: `lldb-dap`.** The
   `AdapterDefinition` interface (`src/engine/adapters/types.ts`) exists
   specifically so other adapters (debugpy, delve, codelldb, ...) can be
   added without touching the transport layer, but none currently are.
+  `lldb-dap` is capable of debugging multiple native languages, and this POC
+  now includes Rust, C, and C++ fixtures to prove that the frontend can
+  handle more than just the original Rust program.
 - **Rust `Vec` pretty-printing quality depends on the local LLVM/lldb
   build.** If a `Vec<T>` shows raw `RawVec` internals instead of `[1, 2, 3]`,
   that's a gap in the locally installed lldb's Rust formatters, not a bug in

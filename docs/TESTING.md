@@ -2,8 +2,15 @@
 
 This project has no unit-test framework — verification is done through three
 headless smoke tests that each drive a **real** `lldb-dap` process against
-the bundled `fixtures/loop-demo` Rust program, plus a manual real-terminal
-pass for anything the headless tests structurally can't see (below).
+bundled fixture binaries, plus a manual real-terminal pass for anything the
+headless tests structurally can't see (below).
+
+## Building fixtures
+
+```bash
+npm install
+npm run build:fixtures
+```
 
 ## Running everything
 
