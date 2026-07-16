@@ -6,17 +6,16 @@
  * launch). Run via `npm run smoke:session`.
  */
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { DebugSession } from '../src/engine/session/DebugSession.js';
 import { lldbDapAdapter } from '../src/engine/adapters/lldbDap.js';
+import { getFixtureConfig } from './fixtures.js';
 import type { SessionSnapshot, OutputEntry } from '../src/shared/types.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_DIR = path.join(__dirname, '..', 'fixtures', 'loop-demo');
-const PROGRAM = path.join(FIXTURE_DIR, 'target', 'debug', 'loop-demo');
-const SOURCE = path.join(FIXTURE_DIR, 'src', 'main.rs');
-const BREAKPOINT_LINE = 7; // `total += doubled as i64;`
+const FIXTURE = getFixtureConfig('loop-demo');
+const FIXTURE_DIR = FIXTURE.cwd;
+const PROGRAM = FIXTURE.program;
+const SOURCE = FIXTURE.source;
+const BREAKPOINT_LINE = FIXTURE.breakpointLine; // `total += doubled as i64;`
 
 function waitForPhase(
   session: DebugSession,

@@ -15,7 +15,7 @@ export function parseCliOptions(argv: string[]): CliOptions | undefined {
     return undefined;
   }
 
-  let values: { adapter?: string; program?: string; source?: string; cwd?: string };
+  let values: { adapter?: string; program?: string; source?: string; cwd?: string; logFile?: string };
   try {
     ({ values } = parseArgs({
       args: rest,
@@ -23,7 +23,8 @@ export function parseCliOptions(argv: string[]): CliOptions | undefined {
         adapter: { type: 'string', default: 'lldb-dap' },
         program: { type: 'string' },
         source: { type: 'string' },
-        cwd: { type: 'string' }
+        cwd: { type: 'string' },
+        logFile: { type: 'string' }
       },
       strict: true
     }));
@@ -45,6 +46,7 @@ export function parseCliOptions(argv: string[]): CliOptions | undefined {
     adapter: values.adapter ?? 'lldb-dap',
     program,
     source,
-    cwd
+    cwd,
+    logFile: values.logFile
   };
 }

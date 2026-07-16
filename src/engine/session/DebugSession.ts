@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { access } from 'node:fs/promises';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { DapClient } from '../dap/DapClient.js';
 import { spawnAdapter } from '../dap/spawnAdapter.js';
@@ -105,6 +106,13 @@ export class DebugSession {
   async start(): Promise<void> {
     this.phase = 'initializing';
     this.emitSnapshot();
+
+    try {
+      await access(this.options.programPath);
+    } catch {
+      this.handleFatalError(new Error(`program binary does not exist: ${this.options.programPath}`));
+      return;
+    }
 
     // Guards the whole handshake against any single step hanging forever
     // (adapter spawn wedged, initialize/launch never answered, etc.) --

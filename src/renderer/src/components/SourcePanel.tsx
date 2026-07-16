@@ -41,7 +41,7 @@ export function SourcePanel({ snapshot, highlightedLines }: SourcePanelProps) {
       id="source"
       title={snapshot.sourcePath.split('/').pop() ?? snapshot.sourcePath}
       focused={isFocused}
-      bodyClassName="[font-variant-ligatures:none]"
+      bodyClassName="[font-variant-ligatures:none] h-full overflow-y-auto"
     >
       {sourceLines.length === 0 ? (
         <div className="px-2 font-sans text-fg-dim">no source loaded</div>

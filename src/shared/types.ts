@@ -85,6 +85,7 @@ export interface CliOptions {
   program: string;
   source: string;
   cwd: string;
+  logFile?: string;
 }
 
 export const IPC = {
