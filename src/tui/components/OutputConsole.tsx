@@ -43,32 +43,34 @@ export function OutputConsole({ output, dapLog, contentHeight }: OutputConsolePr
       borderColor={isFocused ? COLORS.accent : COLORS.borderSubtle}
       flexShrink={0}
       width="100%"
+      backgroundColor={COLORS.panel}
     >
-      <Box paddingX={1} height={1} overflow="hidden" gap={1} backgroundColor={COLORS.panelHeader}>
+      <Box paddingX={1} height={1} overflow="hidden" gap={1} backgroundColor={isFocused ? COLORS.accentSoft : COLORS.panelHeader}>
         <Box backgroundColor={outputTab === 'program' ? COLORS.selectionBg : undefined} paddingX={1}>
           <Text color={outputTab === 'program' ? COLORS.accent : COLORS.fgDim} bold={outputTab === 'program'} wrap="truncate-end">
-            program output
+            program ({output.length})
           </Text>
         </Box>
         <Box backgroundColor={outputTab === 'dap' ? COLORS.selectionBg : undefined} paddingX={1}>
           <Text color={outputTab === 'dap' ? COLORS.accent : COLORS.fgDim} bold={outputTab === 'dap'} wrap="truncate-end">
-            dap log
+            dap ({dapLog.length})
           </Text>
         </Box>
+        <Box flexGrow={1} />
         <Text color={COLORS.fgDim} wrap="truncate-end">
-          h/l to switch
+          {isFocused ? 'active' : 'idle'} • h/l
         </Text>
       </Box>
-      <Box flexDirection="column" height={contentHeight} overflow="hidden">
+      <Box flexDirection="column" height={contentHeight} overflow="hidden" paddingX={1} backgroundColor={COLORS.panelRaised}>
         {outputTab === 'program'
           ? (visible as OutputEntry[]).map((entry, i) => (
               <Text key={windowStart + i} color={CATEGORY_COLOR[entry.category]} wrap="truncate-end">
-                {entry.text}
+                {entry.category === 'stderr' ? '!' : entry.category === 'console' ? '•' : '›'} {entry.text}
               </Text>
             ))
           : (visible as DapLogEntry[]).map((entry, i) => (
               <Text key={windowStart + i} color={COLORS.fgDim} wrap="truncate-end">
-                {entry.direction === 'outgoing' ? '->' : '<-'} {JSON.stringify(entry.payload)}
+                {entry.direction === 'outgoing' ? '→' : '←'} {JSON.stringify(entry.payload)}
               </Text>
             ))}
       </Box>

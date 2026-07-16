@@ -55,13 +55,14 @@ export function StatusBar({ snapshot }: StatusBarProps) {
   const focusedPanel = useUiStore((s) => s.focusedPanel);
   const currentFrame = snapshot.stack.find((f) => f.id === snapshot.selectedFrameId);
   const currentThread = snapshot.threads.find((t) => t.id === snapshot.selectedThreadId);
+  const focusedLabel = focusedPanel;
 
   return (
     <Box flexDirection="column" flexShrink={0} width="100%">
       <Box gap={2} width="100%" overflow="hidden" paddingX={1}>
         <Box flexShrink={0} gap={1}>
           <Text color={COLORS.accent} bold>
-            ‣ dbg
+            dbg
           </Text>
           <Text color={COLORS.fgDim}>{snapshot.adapterId}</Text>
         </Box>
@@ -70,14 +71,19 @@ export function StatusBar({ snapshot }: StatusBarProps) {
             <Box gap={1}>
               <Spinner color={PHASE_COLOR[snapshot.phase]} />
               <Text color={PHASE_COLOR[snapshot.phase]} bold>
-                {PHASE_LABEL[snapshot.phase].toUpperCase()}
+                {PHASE_LABEL[snapshot.phase]}
               </Text>
             </Box>
           ) : (
             <Text color={PHASE_COLOR[snapshot.phase]} bold>
-              ● {PHASE_LABEL[snapshot.phase].toUpperCase()}
+              ● {PHASE_LABEL[snapshot.phase]}
             </Text>
           )}
+        </Box>
+        <Box flexShrink={0} paddingX={1} backgroundColor={COLORS.selectionSoft}>
+          <Text color={COLORS.accent} bold>
+            {focusedLabel}
+          </Text>
         </Box>
         {/* Only the dynamic-length path/thread/error info shrinks -- the
             labels above must always stay fully readable. */}
@@ -102,7 +108,14 @@ export function StatusBar({ snapshot }: StatusBarProps) {
           </Box>
         )}
       </Box>
-      <Text color={COLORS.fgDim} wrap="truncate-end">
+      <Box paddingX={1} gap={1}>
+        <Text color={COLORS.fgMuted}>•</Text>
+        <Text color={COLORS.fgDim} wrap="truncate-end">
+          {currentThread ? `${currentThread.name}` : 'no active thread'}
+          {currentFrame ? `  →  ${currentFrame.name}:${currentFrame.line}` : ''}
+        </Text>
+      </Box>
+      <Text color={COLORS.fgMuted} wrap="truncate-end">
         {HINTS[focusedPanel]}
       </Text>
     </Box>

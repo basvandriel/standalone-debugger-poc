@@ -63,14 +63,16 @@ export function CommandBar({ sourcePath, session, exit }: CommandBarProps) {
   if (!open) return null;
 
   return (
-    <Box flexShrink={0} borderStyle="round" borderColor={COLORS.accent} paddingX={1} gap={1}>
-      <Box backgroundColor={COLORS.accentDim} paddingX={1}>
+    <Box flexShrink={0} borderStyle="round" borderColor={COLORS.accent} paddingX={1} gap={1} backgroundColor={COLORS.panel}>
+      <Box backgroundColor={COLORS.accentSoft} paddingX={1}>
         <Text color={COLORS.accent} bold>
-          CMD
+          command
         </Text>
       </Box>
-      <Text color={COLORS.fg}>{value}</Text>
-      <Text color={COLORS.fgDim}>{value ? '' : 'watch <expr> | bp <line> | quit'}</Text>
+      <Text color={COLORS.fg}>
+        :{value}
+      </Text>
+      <Text color={COLORS.fgMuted}>{value ? '' : 'watch <expr> | bp <line> | q'}</Text>
     </Box>
   );
 }

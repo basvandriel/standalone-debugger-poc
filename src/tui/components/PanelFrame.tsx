@@ -23,14 +23,19 @@ export function PanelFrame({ id, title, focused, contentHeight, children }: Pane
       borderColor={focused ? COLORS.accent : COLORS.borderSubtle}
       flexShrink={0}
       width="100%"
+      backgroundColor={COLORS.panel}
     >
-      <Box paddingX={1} height={1} overflow="hidden" backgroundColor={COLORS.panelHeader}>
+      <Box paddingX={1} height={1} overflow="hidden" backgroundColor={focused ? COLORS.accentSoft : COLORS.panelHeader}>
         <Text color={focused ? COLORS.accent : COLORS.fgDim} bold wrap="truncate-end">
           {collapsed ? '▸' : '▾'} {title}
         </Text>
+        <Box flexGrow={1} />
+        <Text color={focused ? COLORS.accent : COLORS.fgMuted} wrap="truncate-end">
+          {focused ? 'active' : 'idle'}
+        </Text>
       </Box>
       {!collapsed && (
-        <Box flexDirection="column" height={contentHeight} overflow="hidden">
+        <Box flexDirection="column" height={contentHeight} overflow="hidden" paddingX={1} backgroundColor={COLORS.panelRaised}>
           {children}
         </Box>
       )}

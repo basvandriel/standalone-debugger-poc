@@ -37,7 +37,7 @@ export function SourcePanel({ snapshot, highlightedLines, contentHeight }: Sourc
   return (
     <PanelFrame
       id="source"
-      title={snapshot.sourcePath.split('/').pop() ?? snapshot.sourcePath}
+      title={`${snapshot.sourcePath.split('/').pop() ?? snapshot.sourcePath}  [${sourceLines.length} lines]`}
       focused={isFocused}
       contentHeight={contentHeight}
     >
@@ -52,12 +52,20 @@ export function SourcePanel({ snapshot, highlightedLines, contentHeight }: Sourc
           const isCursor = isFocused && line === cursorLine;
           const tokens = highlightedLines?.[idx];
           return (
-            <Box key={line} backgroundColor={isCurrent ? COLORS.accentDim : undefined} width="100%" overflow="hidden">
-              <Text color={COLORS.error} wrap="truncate-end">
+            <Box
+              key={line}
+              backgroundColor={isCurrent ? COLORS.accentDim : isCursor ? COLORS.selectionSoft : undefined}
+              width="100%"
+              overflow="hidden"
+            >
+              <Text color={isCurrent ? COLORS.error : COLORS.fgMuted} wrap="truncate-end">
                 {bp ? (bp.verified ? '●' : '○') : ' '}
               </Text>
-              <Text color={isCursor ? COLORS.accent : COLORS.fgDim} wrap="truncate-end">
+              <Text color={isCurrent ? COLORS.accent : isCursor ? COLORS.accent : COLORS.fgDim} wrap="truncate-end">
                 {String(line).padStart(4, ' ')}{' '}
+              </Text>
+              <Text color={isCurrent ? COLORS.accent : COLORS.fgMuted} wrap="truncate-end">
+                │
               </Text>
               {tokens ? (
                 tokens.map((token, tokenIdx) => (

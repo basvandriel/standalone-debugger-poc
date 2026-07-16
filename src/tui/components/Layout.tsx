@@ -32,9 +32,9 @@ export function Layout({ snapshot, output, dapLog, highlightedLines, session, ex
   const budget = computeLayoutBudget(rows || 40, commandBarOpen, collapsedPanels);
 
   return (
-    <Box flexDirection="column" width={columns || 100}>
+    <Box flexDirection="column" width={columns || 100} paddingX={1}>
       <StatusBar snapshot={snapshot} />
-      <Box>
+      <Box marginTop={1}>
         <Box flexGrow={3} flexBasis={0} marginRight={1}>
           <SourcePanel snapshot={snapshot} highlightedLines={highlightedLines} contentHeight={budget.sourceContentRows} />
         </Box>
@@ -44,7 +44,9 @@ export function Layout({ snapshot, output, dapLog, highlightedLines, session, ex
           <WatchPanel snapshot={snapshot} contentHeight={budget.sideColumns.watch} />
         </Box>
       </Box>
-      <OutputConsole output={output} dapLog={dapLog} contentHeight={budget.consoleContentRows} />
+      <Box marginTop={1}>
+        <OutputConsole output={output} dapLog={dapLog} contentHeight={budget.consoleContentRows} />
+      </Box>
       <CommandBar sourcePath={snapshot.sourcePath} session={session} exit={exit} />
     </Box>
   );
