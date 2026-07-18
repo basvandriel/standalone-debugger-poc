@@ -1,4 +1,5 @@
 import type { DapLogEntry, OutputEntry, SessionSnapshot } from '@shared/types';
+import { useUiStore } from '@shared/ui/useUiStore';
 import { StatusBar } from './StatusBar';
 import { SourcePanel } from './SourcePanel';
 import { CallStackPanel } from './CallStackPanel';
@@ -6,6 +7,7 @@ import { VariablesPanel } from './VariablesPanel';
 import { WatchPanel } from './WatchPanel';
 import { OutputConsole } from './OutputConsole';
 import { CommandBar } from './CommandBar';
+import { FileSwitcher } from './FileSwitcher';
 
 interface LayoutProps {
   snapshot: SessionSnapshot;
@@ -15,6 +17,8 @@ interface LayoutProps {
 }
 
 export function Layout({ snapshot, output, dapLog, highlightedLines }: LayoutProps) {
+  const activeSourcePath = useUiStore((s) => s.activeSourcePath);
+
   return (
     <div className="flex h-full flex-col bg-bg">
       <StatusBar snapshot={snapshot} />
@@ -31,7 +35,8 @@ export function Layout({ snapshot, output, dapLog, highlightedLines }: LayoutPro
       <div className="flex h-50 flex-none px-2 pb-2">
         <OutputConsole output={output} dapLog={dapLog} />
       </div>
-      <CommandBar sourcePath={snapshot.sourcePath} />
+      <FileSwitcher />
+      <CommandBar sourcePath={activeSourcePath} />
     </div>
   );
 }

@@ -29,6 +29,7 @@ it in `keybindings.ts` — nowhere else should contain a literal key string.
 | Step into | `F11` |
 | Step out | `⇧F11` |
 | Open command bar | `:` |
+| Open fuzzy file switcher | `Ctrl+P` / `Cmd+P` |
 | Cycle focused panel | `Tab` / `⇧Tab` |
 
 Panel-scoped (act on whichever panel is currently focused):
@@ -41,10 +42,11 @@ Panel-scoped (act on whichever panel is currently focused):
 | Watch | `↑`/`↓` move, `Delete` remove |
 | Console | `←`/`→` switch tab (program output / DAP log) |
 
-Global keys (`F5`/`F9`/`F10`/`F11`/`:`) work regardless of which panel is
-focused. A text-input guard in `useKeybindings.ts` disables all single-key
-handling while `document.activeElement` is an input/textarea, so typing in
-the command bar doesn't also trigger F-key actions.
+Global keys (`F5`/`F9`/`F10`/`F11`/`:`/`Ctrl+P`) work regardless of which
+panel is focused. A text-input guard in `useKeybindings.ts` disables all
+single-key handling while `document.activeElement` is an input/textarea, so
+typing in the command bar or file switcher doesn't also trigger F-key
+actions.
 
 ## TUI
 
@@ -57,6 +59,7 @@ the command bar doesn't also trigger F-key actions.
 | Step into | `s` |
 | Step out | `o` |
 | Open command bar | `:` |
+| Open fuzzy file switcher | `f` |
 | Cycle focused panel | `Tab` / `⇧Tab` |
 | Collapse/expand focused panel | `z` |
 
@@ -78,8 +81,23 @@ runs:
 | Command | Effect |
 |---|---|
 | `watch <expr>` | Add a watch expression, re-evaluated on every stop/step |
-| `bp <line>` | Toggle a breakpoint on that line of the current source file |
+| `bp <line>` | Toggle a breakpoint on that line of the **currently active** source file (whatever's on screen, not necessarily the file `--source` was pointed at) |
 | `quit` / `q` | Terminate the session and exit |
+
+## Fuzzy file switcher (both frontends)
+
+Opened with `Ctrl+P`/`Cmd+P` (Electron) or `f` (TUI), closed with `Escape` or
+after picking a file. Type to filter; the candidate list is every file
+execution has visited, every file with a breakpoint, plus a one-time
+directory scan near the initial `--source` at startup -- not a project-wide
+index, so there's no project-root config to set up first. Picking a file
+jumps the source panel to it immediately, even if execution has never
+reached it (e.g. to set a breakpoint ahead of time). See
+[docs/USER_FLOWS.md](USER_FLOWS.md) for the full design rationale.
+
+The source panel also **follows execution automatically**: stopping at a
+breakpoint in a different file than what's on screen switches the display
+to that file with no keypress needed.
 
 ## Why they differ
 
