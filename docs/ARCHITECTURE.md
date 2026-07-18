@@ -61,11 +61,28 @@ state and pure functions used by both renderers' components.
 
 `AdapterDefinition` (`types.ts`) is the extension point for adding another
 DAP server later (debugpy, delve, codelldb, ...) without touching the
-transport layer: `resolveExecutable()`, `spawnArgs`, `buildLaunchArgs()`.
-`lldbDap.ts` is the only implementation today — it resolves the executable
-via `xcrun -f lldb-dap` (caching the result, falling back to the known
-CommandLineTools path), and needs no spawn args since argument-less
-invocation defaults to stdio DAP mode.
+transport layer: `resolveExecutable()`, `spawnArgs`, `buildLaunchArgs()`,
+`buildAttachArgs()`. `lldbDap.ts` is the only implementation today — it
+resolves the executable via `xcrun -f lldb-dap` (caching the result,
+falling back to the known CommandLineTools path), and needs no spawn args
+since argument-less invocation defaults to stdio DAP mode.
+`buildAttachArgs({ pid, name })` returns `{ pid }` for attach-by-pid, or
+`{ program: name, waitFor: true }` for attach-by-name — both field names
+and the `waitFor` polling behavior were confirmed empirically (`strings` on
+the installed binary, plus a live test) since `lldb-dap`'s attach schema
+isn't otherwise documented; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for the
+limitations this uncovered.
+
+### `workspace/listSourceFiles.ts` — fuzzy-switcher candidate scan
+
+A bounded recursive directory walk (depth/file-count capped, skips
+`target/`/`node_modules/`/`.git`/dotfiles, fixed extension allowlist
+covering every language this POC's adapter debugs) starting from wherever
+the initial `--source` lives. No Electron/Ink imports, so the TUI calls it
+directly and Electron exposes it over `IPC.LIST_SOURCE_FILES`. This is what
+seeds the fuzzy file switcher (see below) with files execution hasn't
+visited yet — deliberately not a "project root" concept, just a shallow
+scan next to the entry file.
 
 ### `session/DebugSession.ts` — the orchestration state machine
 
@@ -76,23 +93,40 @@ Electron/Ink types: `start()`, `restart()`, `toggleBreakpoint(file, line)`,
 `terminate()`, plus push-style subscriptions: `onSnapshot`, `onOutput`,
 `onDapLog`.
 
-**Phase model:** `idle → initializing → configuring → running ⇄ stopped →
-terminated`, with `error` reachable from most states. `configuring` is the
-"adapter is up, breakpoints can be set, waiting for the user to press
-start" phase; `running`/`stopped` alternate as the program executes and hits
+**Phase model:** `idle → initializing → [waiting →] configuring → running ⇄
+stopped → terminated`, with `error` reachable from most states. `waiting`
+only appears for by-name attach (`dbg attach --name`) — the adapter is up
+but polling for a matching process to appear, per the handshake description
+below. `configuring` is the "adapter is up (and, for attach, already
+attached), breakpoints can be set, waiting for the user to press start"
+phase; `running`/`stopped` alternate as the program executes and hits
 breakpoints.
 
 **The handshake** (`runHandshake()`), guarded by a 20-second timeout raced
-against it:
+against it — **except** for by-name attach, see below:
 
 1. Resolve + spawn `lldb-dap` (no args, stdio mode).
 2. Send `initialize` and await the response.
-3. Send `launch` (**do not await the response** — lldb-dap only lets this
-   settle after `configurationDone`) and race waiting for the `initialized`
-   event against the (never-resolving-on-success) launch response promise.
+3. Branch into `runLaunchHandshake()` or `runAttachHandshake()` depending on
+   `DebugSessionOptions.attach`:
+   - **Launch** (`run` subcommand): send `launch` (**do not await the
+     response** — lldb-dap only lets this settle after `configurationDone`)
+     and race waiting for the `initialized` event against the
+     (never-resolving-on-success) launch response promise.
+   - **Attach** (`attach` subcommand): send `attach` with either `{ pid }`
+     or `{ program: name, waitFor: true }` (see `adapters/` above), racing
+     `initialized` the same way. By-name attach additionally sets
+     `phase = 'waiting'` right before sending the request, since `lldb-dap`
+     holds off responding while it polls for a matching process — and
+     `start()`'s usual 20-second handshake timeout is skipped **only** for
+     this path, since `waitFor` is open-ended by design (bounded by the user
+     going to start their program elsewhere, not by dbg). See
+     [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for what this uncovered about
+     `lldb-dap`'s `waitFor` timing.
 4. `phase = 'configuring'`. Breakpoint toggles send `setBreakpoints` with
    the **full line set for that file** each time — DAP replaces the set,
-   it doesn't diff it.
+   it doesn't diff it. Identical for launch and attach once this point is
+   reached.
 5. `beginExecution()` sends `configurationDone` → `phase = 'running'`.
 6. A `stopped` event triggers `threads` → `stackTrace` → scopes for frame 0
    → top-level variables → re-evaluation of every watch expression →
@@ -136,7 +170,9 @@ DOM-agnostic state and pure logic, imported by both `src/renderer/` and
   concern and not part of the debug session itself: which panel is focused,
   keyboard cursor line, selected variable/watch index, which
   `variablesReference`s are expanded, command-bar open/value state, which
-  panels are collapsed.
+  panels are collapsed, and (see below) which file is currently on screen,
+  the accumulated fuzzy-switcher candidate list, and file-switcher
+  open/query state.
 - **`flattenVariables.ts`** — turns the scope/variable tree into a flat list
   of visible rows for `j`/`k`-style navigation. Row keys are
   `${parentKey}/${siblingIndex}:${name}`, not just `${parentKey}/${name}` —
@@ -148,12 +184,45 @@ DOM-agnostic state and pure logic, imported by both `src/renderer/` and
   than hardcoding one, specifically so this text can't drift out of sync
   with either frontend's actual keybinding again (it already did once).
 - **`keybindings.ts`** — see [KEYBINDINGS.md](KEYBINDINGS.md).
+- **`fuzzyMatch.ts`** — the file switcher's matching logic: a small
+  subsequence-based fuzzy filter with no external dependency. Gates and
+  scores against `basename`/`parentDir/basename`, deliberately **not** the
+  full absolute filesystem path — every candidate shares the same long repo
+  path prefix, so matching the full path would let almost any short query
+  spuriously match everything via letters buried in that shared prefix
+  rather than the actual filename (a real bug caught while building this).
+
+### Multi-file source following
+
+`SessionSnapshot.sourcePath` is just the CLI's initial `--source` hint; what
+each frontend's `App.tsx` actually displays is `useUiStore`'s
+`activeSourcePath`, which starts from that hint but then:
+
+- **Follows execution automatically** — an effect keyed on the stopped
+  top frame's id updates `activeSourcePath` whenever a new stop lands on a
+  different file than what's on screen, reusing
+  `StackFrameDescriptor.sourcePath` (already populated from every DAP
+  `stackTrace` response — no engine changes were needed for this).
+- **Accumulates `knownSourceFiles`** on every snapshot (every frame's
+  `sourcePath` plus every key of `SessionSnapshot.breakpoints`), merged with
+  a one-time `listSourceFiles()` scan at startup, feeding the `FileSwitcher`
+  overlay (one per frontend, mirroring how `CommandBar` is already
+  duplicated rather than shared, since one is Ink and one is DOM).
+
+Every other read of "what file is this action against" (breakpoint toggling
+in `SourcePanel`/`CommandBar`/the keybinding hooks, the panel title) reads
+`activeSourcePath`, not `snapshot.sourcePath`.
 
 ## Electron frontend (`src/main/`, `src/preload/`, `src/renderer/`)
 
-- **`main/cli.ts`** — parses `dbg run --adapter ... --program ... --source
-  ... --cwd ...` via Node's built-in `util.parseArgs`. Validation failures
-  print usage and exit before any `BrowserWindow` is created.
+- **`main/cli.ts`** — parses two subcommands via Node's built-in
+  `util.parseArgs`: `dbg run --adapter ... --program ... --source ...
+  --cwd ...` (launch) and `dbg attach --adapter ... (--pid <n> | --name
+  <path>) --source ... --cwd ...` (attach — exactly one of `--pid`/`--name`
+  required; `--name` is resolved to an absolute path the same way
+  `--program` is, since that's the only `lldb-dap` process-matching
+  behavior this project has verified). Validation failures print usage and
+  exit before any `BrowserWindow` is created.
 - **`main/index.ts`** — bootstraps: parses CLI args, creates the
   `BrowserWindow` (`contextIsolation: true`, `nodeIntegration: false`,
   `sandbox: true`), constructs the `DebugSession`, registers IPC handlers,

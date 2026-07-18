@@ -16,6 +16,9 @@ export function App() {
 
   const setSourceLines = useUiStore((s) => s.setSourceLines);
   const resetVariableExpansion = useUiStore((s) => s.resetVariableExpansion);
+  const activeSourcePath = useUiStore((s) => s.activeSourcePath);
+  const setActiveSourcePath = useUiStore((s) => s.setActiveSourcePath);
+  const addKnownSourceFiles = useUiStore((s) => s.addKnownSourceFiles);
 
   // DOM-specific (raw HTML from Shiki) -- stays local to this renderer
   // rather than in the cross-frontend shared UI store.
@@ -29,7 +32,16 @@ export function App() {
     const unsubOutput = window.dbg.onOutput(appendOutput);
     const unsubDapLog = window.dbg.onDapLog(appendDapLog);
 
-    window.dbg.getInitialState().then(setSnapshot);
+    window.dbg.getInitialState().then((initialSnapshot) => {
+      setSnapshot(initialSnapshot);
+      // Seed the fuzzy file switcher with files near the initial --source
+      // (if any -- attach mode may not have one) before execution has
+      // visited any of them, so "jump ahead and set a breakpoint" works
+      // from the start.
+      if (initialSnapshot.sourcePath) {
+        void window.dbg.listSourceFiles(initialSnapshot.sourcePath).then(addKnownSourceFiles);
+      }
+    });
     window.dbg.notifyRendererReady();
 
     return () => {
@@ -37,13 +49,35 @@ export function App() {
       unsubOutput();
       unsubDapLog();
     };
-  }, [setSnapshot, appendOutput, appendDapLog]);
+  }, [setSnapshot, appendOutput, appendDapLog, addKnownSourceFiles]);
 
+  // Accumulates every file execution has visited or that has a breakpoint,
+  // and initializes activeSourcePath from the CLI's --source hint once --
+  // this is what lets the source panel "follow, don't ask" across files.
   useEffect(() => {
     if (!snapshot) return;
-    if (loadedSourcePath.current === snapshot.sourcePath) return;
-    loadedSourcePath.current = snapshot.sourcePath;
-    const sourcePath = snapshot.sourcePath;
+    const known: string[] = [];
+    if (snapshot.sourcePath) known.push(snapshot.sourcePath);
+    for (const frame of snapshot.stack) {
+      if (frame.sourcePath) known.push(frame.sourcePath);
+    }
+    known.push(...Object.keys(snapshot.breakpoints));
+    if (known.length > 0) addKnownSourceFiles(known);
+
+    if (useUiStore.getState().activeSourcePath === undefined && snapshot.sourcePath) {
+      setActiveSourcePath(snapshot.sourcePath);
+    }
+  }, [snapshot, addKnownSourceFiles, setActiveSourcePath]);
+
+  useEffect(() => {
+    if (loadedSourcePath.current === activeSourcePath) return;
+    loadedSourcePath.current = activeSourcePath;
+    if (!activeSourcePath) {
+      setSourceLines([]);
+      setHighlightedLines(undefined);
+      return;
+    }
+    const sourcePath = activeSourcePath;
     let cancelled = false;
 
     window.dbg
@@ -65,7 +99,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [snapshot?.sourcePath, setSourceLines, setHighlightedLines]);
+  }, [activeSourcePath, setSourceLines, setHighlightedLines]);
 
   useEffect(() => {
     if (!snapshot || snapshot.phase !== 'stopped') return;
@@ -73,8 +107,12 @@ export function App() {
     if (topFrameId !== lastTopFrameId.current) {
       lastTopFrameId.current = topFrameId;
       resetVariableExpansion();
+      const topFrameSourcePath = snapshot.stack[0]?.sourcePath;
+      if (topFrameSourcePath && topFrameSourcePath !== useUiStore.getState().activeSourcePath) {
+        setActiveSourcePath(topFrameSourcePath);
+      }
     }
-  }, [snapshot?.phase, snapshot?.stack, resetVariableExpansion]);
+  }, [snapshot?.phase, snapshot?.stack, resetVariableExpansion, setActiveSourcePath]);
 
   useKeybindings(snapshot);
 

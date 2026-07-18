@@ -15,10 +15,13 @@ npm run build:fixtures
 ## Running everything
 
 ```bash
-npm run typecheck    # tsc across main/preload, renderer, and TUI tsconfigs
-npm run smoke         # engine-only: DapClient + DebugSession, no BrowserWindow
-npm run smoke:session # DebugSession end to end (this is what src/main/ipc.ts wraps)
-npm run smoke:tui     # real Ink render via ink-testing-library, simulated keystrokes
+npm run typecheck        # tsc across main/preload, renderer, and TUI tsconfigs
+npm run smoke             # engine-only: DapClient + DebugSession, no BrowserWindow
+npm run smoke:session     # DebugSession end to end (this is what src/main/ipc.ts wraps)
+npm run smoke:tui         # real Ink render via ink-testing-library, simulated keystrokes
+npm run smoke:multifile      # engine-only: cross-file breakpoints (multi-file-demo fixture)
+npm run smoke:tui:multifile  # real Ink render: source-follow + fuzzy file switcher
+npm run smoke:attach         # engine-only: dbg attach --name against an externally-spawned process
 ```
 
 All three spawn a real adapter process and must be confirmed clean afterward:
@@ -51,6 +54,40 @@ Any `lldb-dap` process still running after a smoke test exits is a bug in
   rendered frame text and `useDbgStore.getState()`. Covers the same
   breakpoint/run/step/watch/restart flow as the session test, but through
   the real component tree and real keybinding handlers.
+- **`scripts/multi-file-smoke-test.ts`** (`npm run smoke:multifile`) — engine
+  half of the multi-file proposal (docs/USER_FLOWS.md): sets a breakpoint
+  directly on `fixtures/multi-file-demo/src/report.rs`, a file execution
+  hasn't reached yet and isn't the session's initial `sourcePath`, and
+  verifies it's hit at the right file/line with the correct per-frame
+  `sourcePath` -- the data a source-follow UI and fuzzy file switcher both
+  depend on.
+- **`src/tui/__smoke__/multi-file-smoke-test.ts`** (`npm run smoke:tui:multifile`)
+  — UI half of the same proposal: drives the real `<App>` through the fuzzy
+  file switcher (`f`, type, Enter) to jump to `ops.rs` before it's ever been
+  visited, sets a breakpoint there, switches back to `main.rs`, then asserts
+  the source panel auto-follows back to `ops.rs` the moment execution stops
+  there -- proving "follow, don't ask" through the real component tree.
+- **`scripts/attach-smoke-test.ts`** (`npm run smoke:attach`) — proof of the
+  `dbg attach --name` flow (docs/USER_FLOWS.md): arms a `DebugSession` in
+  by-name attach mode against `fixtures/attach-demo` *before* the target
+  process exists, waits for `phase === 'waiting'`, then spawns the fixture
+  binary directly via `child_process.spawn` -- deliberately bypassing this
+  session's own launch path, simulating a process started from somewhere
+  else entirely (e.g. VS Code) -- and verifies lldb-dap's `waitFor` catches
+  it, after which breakpoints/stepping/continue all work normally.
+
+## A real lldb-dap quirk found while building the attach smoke test
+
+`lldb-dap`'s `waitFor` needs a brief moment after receiving the `attach`
+request to arm its process-launch detection -- confirmed empirically: a
+target process spawned immediately after `phase` reaches `'waiting'` is
+reliably *missed* with no retry, while the identical spawn after a short
+delay is reliably caught. `scripts/attach-smoke-test.ts` has a 2-second
+delay before spawning its target for exactly this reason. This is a
+non-issue in real use -- a human reacting to the "watching for X" status bar
+badge takes far longer than this window regardless -- but matters for
+anything scripting the attach flow tightly. See
+[KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## The gap: `ink-testing-library`'s fake stdin
 
@@ -115,7 +152,7 @@ After any change to `DebugSession`, the DAP layer, or either frontend's
 session-lifecycle handling (start/restart/terminate):
 
 1. `npm run typecheck`
-2. `npm run smoke && npm run smoke:session && npm run smoke:tui`
+2. `npm run smoke && npm run smoke:session && npm run smoke:tui && npm run smoke:multifile && npm run smoke:tui:multifile && npm run smoke:attach`
 3. `ps aux | grep lldb-dap` — confirm nothing orphaned
 4. If the change touches TUI rendering/input/terminal escape sequences
    specifically: a real-PTY pass per the technique above, since the smoke

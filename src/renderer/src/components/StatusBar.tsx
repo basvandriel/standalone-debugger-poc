@@ -9,16 +9,17 @@ interface StatusBarProps {
 
 const K = ELECTRON_KEYS;
 const HINTS: Record<FocusedPanel, string> = {
-  source: `${K.moveUp}/${K.moveDown} move   ${K.toggleBreakpoint} breakpoint   ${K.startContinue} start/continue   ${K.stepOver} step over   ${K.stepIn} step into   ${K.stepOut} step out   ${K.stop} stop   ${K.commandBar} cmd`,
-  stack: `${K.moveUp}/${K.moveDown} select frame   ${K.startContinue} start/continue   ${K.stepOver}/${K.stepIn}/${K.stepOut} step   ${K.stop} stop   ${K.commandBar} cmd`,
-  variables: `${K.moveUp}/${K.moveDown} move   ${K.expand} expand   ${K.collapse} collapse   ${K.toggleEntry} toggle   ${K.stop} stop   ${K.commandBar} cmd`,
-  watch: `${K.moveUp}/${K.moveDown} move   ${K.removeWatch} remove   ${K.stop} stop   ${K.commandBar} cmd`,
-  console: `${K.switchTab} switch tab   ${K.stop} stop   ${K.commandBar} cmd`
+  source: `${K.moveUp}/${K.moveDown} move   ${K.toggleBreakpoint} breakpoint   ${K.startContinue} start/continue   ${K.stepOver} step over   ${K.stepIn} step into   ${K.stepOut} step out   ${K.switchFile} files   ${K.stop} stop   ${K.commandBar} cmd`,
+  stack: `${K.moveUp}/${K.moveDown} select frame   ${K.startContinue} start/continue   ${K.stepOver}/${K.stepIn}/${K.stepOut} step   ${K.switchFile} files   ${K.stop} stop   ${K.commandBar} cmd`,
+  variables: `${K.moveUp}/${K.moveDown} move   ${K.expand} expand   ${K.collapse} collapse   ${K.toggleEntry} toggle   ${K.switchFile} files   ${K.stop} stop   ${K.commandBar} cmd`,
+  watch: `${K.moveUp}/${K.moveDown} move   ${K.removeWatch} remove   ${K.switchFile} files   ${K.stop} stop   ${K.commandBar} cmd`,
+  console: `${K.switchTab} switch tab   ${K.switchFile} files   ${K.stop} stop   ${K.commandBar} cmd`
 };
 
 const PHASE_LABEL: Record<SessionPhase, string> = {
   idle: 'idle',
   initializing: 'starting',
+  waiting: 'watching',
   configuring: 'ready',
   running: 'running',
   stopped: 'paused',
@@ -29,6 +30,7 @@ const PHASE_LABEL: Record<SessionPhase, string> = {
 const PHASE_BADGE_CLASS: Record<SessionPhase, string> = {
   idle: 'bg-fg-dim/10 text-fg-dim ring-fg-dim/25',
   initializing: 'bg-fg-dim/10 text-fg-dim ring-fg-dim/25',
+  waiting: 'bg-accent-dim/60 text-accent ring-accent/40',
   configuring: 'bg-accent-dim/60 text-accent ring-accent/40',
   running: 'bg-warn/15 text-warn ring-warn/40',
   stopped: 'bg-success/15 text-success ring-success/40',
@@ -39,6 +41,7 @@ const PHASE_BADGE_CLASS: Record<SessionPhase, string> = {
 const PHASE_DOT_CLASS: Record<SessionPhase, string> = {
   idle: 'bg-fg-dim',
   initializing: 'bg-fg-dim animate-pulse',
+  waiting: 'bg-accent animate-pulse',
   configuring: 'bg-accent',
   running: 'bg-warn animate-pulse',
   stopped: 'bg-success',
