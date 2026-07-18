@@ -11,10 +11,13 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:fixture": "electron-vite dev -- run --adapter lldb-dap --program fixtures/loop-demo/target/debug/loop-demo --source fixtures/loop-demo/src/main.rs",
+    "dev:fixture:multi": "electron-vite dev -- run --adapter lldb-dap --program fixtures/multi-file-demo/target/debug/multi-file-demo --source fixtures/multi-file-demo/src/main.rs",
     "build": "electron-vite build",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json && tsc -p tsconfig.tui.json",
     "smoke": "tsx scripts/smoke-test.ts",
     "smoke:session": "tsx scripts/session-smoke-test.ts",
+    "smoke:multifile": "tsx scripts/multi-file-smoke-test.ts",
+    "smoke:attach": "tsx scripts/attach-smoke-test.ts",
     "build:fixtures": "tsx scripts/build-fixtures.ts",
     "tui": "tsx src/tui/index.tsx",
     "tui:fixture": "npm run build:fixtures && tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/loop-demo/target/debug/loop-demo --source fixtures/loop-demo/src/main.rs",
@@ -22,7 +25,10 @@
     "tui:fixture:cpp": "npm run build:fixtures && tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/cpp-loop/target/debug/cpp-loop --source fixtures/cpp-loop/src/main.cpp",
     "tui:fixture:c:log": "mkdir -p logs && npm run build:fixtures && tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/c-loop/target/debug/c-loop --source fixtures/c-loop/src/main.c --logFile logs/c-loop.log",
     "tui:fixture:cpp:log": "mkdir -p logs && npm run build:fixtures && tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/cpp-loop/target/debug/cpp-loop --source fixtures/cpp-loop/src/main.cpp --logFile logs/cpp-loop.log",
-    "smoke:tui": "tsx src/tui/__smoke__/tui-smoke-test.ts"
+    "tui:fixture:multi": "npm run build:fixtures && tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/multi-file-demo/target/debug/multi-file-demo --source fixtures/multi-file-demo/src/main.rs",
+    "tui:fixture:attach": "npm run build:fixtures && tsx src/tui/index.tsx attach --adapter lldb-dap --name fixtures/attach-demo/target/debug/attach-demo --source fixtures/attach-demo/src/main.rs",
+    "smoke:tui": "tsx src/tui/__smoke__/tui-smoke-test.ts",
+    "smoke:tui:multifile": "tsx src/tui/__smoke__/multi-file-smoke-test.ts"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",

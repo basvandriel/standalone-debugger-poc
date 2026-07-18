@@ -16,6 +16,23 @@ interface UiStore {
   sourceLines: string[];
   setSourceLines: (lines: string[]) => void;
 
+  /** Which file is currently on screen -- decoupled from the session's
+   * initial --source hint so execution/the file switcher can change it. */
+  activeSourcePath?: string;
+  setActiveSourcePath: (path: string) => void;
+
+  /** Every file execution has visited, had a breakpoint set in, or that was
+   * found by the initial directory scan -- grows monotonically, feeds the
+   * fuzzy file switcher. */
+  knownSourceFiles: string[];
+  addKnownSourceFiles: (paths: string[]) => void;
+
+  fileSwitcherOpen: boolean;
+  fileSwitcherQuery: string;
+  openFileSwitcher: () => void;
+  closeFileSwitcher: () => void;
+  setFileSwitcherQuery: (query: string) => void;
+
   selectedVariableIndex: number;
   setSelectedVariableIndex: (index: number) => void;
   expandedRefs: Set<number>;
@@ -53,6 +70,24 @@ export const useUiStore = create<UiStore>((set) => ({
 
   sourceLines: [],
   setSourceLines: (lines) => set({ sourceLines: lines }),
+
+  activeSourcePath: undefined,
+  setActiveSourcePath: (path) => set({ activeSourcePath: path }),
+
+  knownSourceFiles: [],
+  addKnownSourceFiles: (paths) =>
+    set((state) => {
+      if (paths.length === 0) return state;
+      const next = new Set(state.knownSourceFiles);
+      for (const p of paths) next.add(p);
+      return { knownSourceFiles: [...next] };
+    }),
+
+  fileSwitcherOpen: false,
+  fileSwitcherQuery: '',
+  openFileSwitcher: () => set({ fileSwitcherOpen: true, fileSwitcherQuery: '' }),
+  closeFileSwitcher: () => set({ fileSwitcherOpen: false, fileSwitcherQuery: '' }),
+  setFileSwitcherQuery: (query) => set({ fileSwitcherQuery: query }),
 
   selectedVariableIndex: 0,
   setSelectedVariableIndex: (index) => set({ selectedVariableIndex: Math.max(0, index) }),

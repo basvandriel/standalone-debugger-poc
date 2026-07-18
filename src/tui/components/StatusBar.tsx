@@ -14,16 +14,17 @@ interface StatusBarProps {
 
 const K = TUI_KEYS;
 const HINTS: Record<FocusedPanel, string> = {
-  source: `${K.moveDown}/${K.moveUp} move  ${K.toggleBreakpoint} breakpoint  ${K.startContinue} run/continue  ${K.stepOver}/${K.stepIn}/${K.stepOut} step  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
-  stack: `${K.moveDown}/${K.moveUp} select frame  ${K.startContinue} run/continue  ${K.stepOver}/${K.stepIn}/${K.stepOut} step  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
-  variables: `${K.moveDown}/${K.moveUp} move  ${K.expand}/${K.toggleEntry} expand  ${K.collapse} collapse  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
-  watch: `${K.moveDown}/${K.moveUp} move  ${K.removeWatch} remove  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
-  console: `${K.switchTab} switch tab  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`
+  source: `${K.moveDown}/${K.moveUp} move  ${K.toggleBreakpoint} breakpoint  ${K.startContinue} run/continue  ${K.stepOver}/${K.stepIn}/${K.stepOut} step  ${K.switchFile} files  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
+  stack: `${K.moveDown}/${K.moveUp} select frame  ${K.startContinue} run/continue  ${K.stepOver}/${K.stepIn}/${K.stepOut} step  ${K.switchFile} files  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
+  variables: `${K.moveDown}/${K.moveUp} move  ${K.expand}/${K.toggleEntry} expand  ${K.collapse} collapse  ${K.switchFile} files  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
+  watch: `${K.moveDown}/${K.moveUp} move  ${K.removeWatch} remove  ${K.switchFile} files  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
+  console: `${K.switchTab} switch tab  ${K.switchFile} files  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`
 };
 
 const PHASE_LABEL: Record<SessionPhase, string> = {
   idle: 'idle',
   initializing: 'starting',
+  waiting: 'watching',
   configuring: 'ready',
   running: 'running',
   stopped: 'paused',
@@ -34,6 +35,7 @@ const PHASE_LABEL: Record<SessionPhase, string> = {
 const PHASE_COLOR: Record<SessionPhase, string> = {
   idle: COLORS.fgDim,
   initializing: COLORS.fgDim,
+  waiting: COLORS.accent,
   configuring: COLORS.accent,
   running: COLORS.warn,
   stopped: COLORS.success,
@@ -44,6 +46,7 @@ const PHASE_COLOR: Record<SessionPhase, string> = {
 const PHASE_BADGE_BG: Record<SessionPhase, string> = {
   idle: COLORS.panelHeader,
   initializing: COLORS.panelHeader,
+  waiting: COLORS.accentDim,
   configuring: COLORS.accentDim,
   running: COLORS.warnDim,
   stopped: COLORS.successDim,
@@ -66,7 +69,7 @@ export function StatusBar({ snapshot }: StatusBarProps) {
           <Text color={COLORS.fgDim}>{snapshot.adapterId}</Text>
         </Box>
         <Box flexShrink={0} paddingX={1} backgroundColor={PHASE_BADGE_BG[snapshot.phase]}>
-          {snapshot.phase === 'initializing' ? (
+          {snapshot.phase === 'initializing' || snapshot.phase === 'waiting' ? (
             <Box gap={1}>
               <Spinner color={PHASE_COLOR[snapshot.phase]} />
               <Text color={PHASE_COLOR[snapshot.phase]} bold>

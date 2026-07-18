@@ -50,6 +50,34 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
     breakpointLine: 28,
     expectedSummary: "items=[2, 4, 6, 8, 10] total=30",
   },
+  "multi-file-demo": {
+    name: "multi-file-demo",
+    cwd: path.join(FIXTURES_ROOT, "multi-file-demo"),
+    program: path.join(
+      FIXTURES_ROOT,
+      "multi-file-demo",
+      "target",
+      "debug",
+      "multi-file-demo",
+    ),
+    source: path.join(FIXTURES_ROOT, "multi-file-demo", "src", "main.rs"),
+    breakpointLine: 5,
+    expectedSummary: "values=[2, 4, 6, 8, 10] total=30",
+  },
+  "attach-demo": {
+    name: "attach-demo",
+    cwd: path.join(FIXTURES_ROOT, "attach-demo"),
+    program: path.join(
+      FIXTURES_ROOT,
+      "attach-demo",
+      "target",
+      "debug",
+      "attach-demo",
+    ),
+    source: path.join(FIXTURES_ROOT, "attach-demo", "src", "main.rs"),
+    breakpointLine: 11,
+    expectedSummary: "done, final count=5",
+  },
 };
 
 export function getFixtureConfig(fixtureName: string): FixtureConfig {

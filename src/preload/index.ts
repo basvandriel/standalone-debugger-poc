@@ -5,6 +5,9 @@ import type { DapLogEntry, OutputEntry, SessionSnapshot, VariableNode } from '@s
 const api = {
   getInitialState: (): Promise<SessionSnapshot> => ipcRenderer.invoke(IPC.GET_INITIAL_STATE),
   readSourceFile: (path: string): Promise<string> => ipcRenderer.invoke(IPC.READ_SOURCE_FILE, path),
+  /** Pass a source *file* path -- resolves to every candidate file found near it. */
+  listSourceFiles: (sourcePath: string): Promise<string[]> =>
+    ipcRenderer.invoke(IPC.LIST_SOURCE_FILES, sourcePath),
   toggleBreakpoint: (file: string, line: number): Promise<void> =>
     ipcRenderer.invoke(IPC.TOGGLE_BREAKPOINT, file, line),
   beginExecution: (): Promise<void> => ipcRenderer.invoke(IPC.BEGIN_EXECUTION),

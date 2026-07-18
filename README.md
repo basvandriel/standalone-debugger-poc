@@ -73,6 +73,7 @@ to `lldb-dap`, the only adapter currently implemented.)
 | [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md) | Full keybinding reference for both frontends, and why they intentionally differ |
 | [docs/TESTING.md](docs/TESTING.md) | The headless smoke-test suite and the verification discipline used throughout this project |
 | [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | Current limitations — single-adapter support, TUI terminal-scroll caveat, etc. |
+| [docs/USER_FLOWS.md](docs/USER_FLOWS.md) | Proposed (not yet implemented) flows for multi-file projects and attaching to externally-started processes |
 | [docs/MONETIZATION.md](docs/MONETIZATION.md) | Working notes on whether/how this could become more than an OSS side project |
 
 ## Project structure

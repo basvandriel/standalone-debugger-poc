@@ -1,6 +1,7 @@
 export type SessionPhase =
   | "idle"
   | "initializing"
+  | "waiting"
   | "configuring"
   | "running"
   | "stopped"
@@ -67,7 +68,7 @@ export interface SessionSnapshot {
   phase: SessionPhase;
   adapterId: string;
   programPath: string;
-  sourcePath: string;
+  sourcePath?: string;
   errorMessage?: string;
   breakpoints: Record<string, BreakpointDescriptor[]>;
   threads: ThreadDescriptor[];
@@ -81,16 +82,23 @@ export interface SessionSnapshot {
 }
 
 export interface CliOptions {
+  mode: "run" | "attach";
   adapter: string;
-  program: string;
-  source: string;
   cwd: string;
   logFile?: string;
+  /** run: required; attach: unset until lldb-dap resolves it */
+  program?: string;
+  /** optional hint in both modes -- run defaults it, attach does not */
+  source?: string;
+  /** attach only -- exactly one of attachPid/attachName is set */
+  attachPid?: number;
+  attachName?: string;
 }
 
 export const IPC = {
   GET_INITIAL_STATE: "dbg:getInitialState",
   READ_SOURCE_FILE: "dbg:readSourceFile",
+  LIST_SOURCE_FILES: "dbg:listSourceFiles",
   TOGGLE_BREAKPOINT: "dbg:toggleBreakpoint",
   BEGIN_EXECUTION: "dbg:beginExecution",
   CONTINUE_EXECUTION: "dbg:continueExecution",
