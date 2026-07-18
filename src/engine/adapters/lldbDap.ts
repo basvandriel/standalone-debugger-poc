@@ -40,5 +40,11 @@ export const lldbDapAdapter: AdapterDefinition = {
       env: {},
       stopOnEntry: false
     };
+  },
+  buildAttachArgs({ pid, name }) {
+    // pid attach is immediate; name attach polls (waitFor) until a matching
+    // process appears, so the target can be started from anywhere else.
+    if (pid !== undefined) return { pid };
+    return { program: name, waitFor: true };
   }
 };

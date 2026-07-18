@@ -11,6 +11,7 @@ import { VariablesPanel } from './VariablesPanel.js';
 import { WatchPanel } from './WatchPanel.js';
 import { OutputConsole } from './OutputConsole.js';
 import { CommandBar } from './CommandBar.js';
+import { FileSwitcher } from './FileSwitcher.js';
 import { computeLayoutBudget } from '../lib/layoutBudget.js';
 import type { HighlightToken } from '../lib/highlightSourceTokens.js';
 import type { DebugSession } from '../../engine/session/DebugSession.js';
@@ -28,6 +29,7 @@ export function Layout({ snapshot, output, dapLog, highlightedLines, session, ex
   const { columns, rows } = useWindowSize();
   const commandBarOpen = useUiStore((s) => s.commandBarOpen);
   const collapsedPanels = useUiStore((s) => s.collapsedPanels);
+  const activeSourcePath = useUiStore((s) => s.activeSourcePath);
 
   const budget = computeLayoutBudget(rows || 40, commandBarOpen, collapsedPanels);
 
@@ -45,7 +47,8 @@ export function Layout({ snapshot, output, dapLog, highlightedLines, session, ex
         </Box>
       </Box>
       <OutputConsole output={output} dapLog={dapLog} contentHeight={budget.consoleContentRows} />
-      <CommandBar sourcePath={snapshot.sourcePath} session={session} exit={exit} />
+      <FileSwitcher />
+      <CommandBar sourcePath={activeSourcePath} session={session} exit={exit} />
     </Box>
   );
 }

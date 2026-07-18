@@ -21,9 +21,12 @@ import type {
 
 export interface DebugSessionOptions {
   adapterId: string;
-  programPath: string;
-  sourcePath: string;
   cwd: string;
+  sourcePath?: string;
+  /** Required for launch mode; unset (and unknown) for attach mode. */
+  programPath?: string;
+  /** When set, start() attaches instead of launching. */
+  attach?: { pid: number } | { name: string };
 }
 
 type Unsubscribe = () => void;
@@ -59,10 +62,13 @@ interface DapVariable {
 export class DebugSession {
   private client?: DapClient;
   private child?: ChildProcessWithoutNullStreams;
-  private launchPromise?: Promise<unknown>;
+  private handshakeRequestPromise?: Promise<unknown>;
 
   private phase: SessionPhase = "idle";
   private errorMessage?: string;
+  /** Display label for the "program" status-bar slot -- a real path for
+   * launch mode, or a description of what attach is waiting/attached to. */
+  private readonly programLabel: string;
 
   private readonly breakpointLines = new Map<string, number[]>();
   private readonly breakpoints = new Map<string, BreakpointDescriptor[]>();
@@ -84,7 +90,13 @@ export class DebugSession {
   constructor(
     private readonly options: DebugSessionOptions,
     private readonly adapter: AdapterDefinition,
-  ) {}
+  ) {
+    this.programLabel = !options.attach
+      ? (options.programPath ?? "")
+      : "pid" in options.attach
+        ? `pid ${options.attach.pid}`
+        : `waiting for "${options.attach.name}"`;
+  }
 
   onSnapshot(cb: (snapshot: SessionSnapshot) => void): Unsubscribe {
     this.snapshotListeners.add(cb);
@@ -109,14 +121,27 @@ export class DebugSession {
     this.phase = "initializing";
     this.emitSnapshot();
 
-    try {
-      await access(this.options.programPath);
-    } catch {
-      this.handleFatalError(
-        new Error(`program binary does not exist: ${this.options.programPath}`),
-      );
-      return;
+    if (!this.options.attach) {
+      try {
+        await access(this.options.programPath!);
+      } catch {
+        this.handleFatalError(
+          new Error(`program binary does not exist: ${this.options.programPath}`),
+        );
+        return;
+      }
     }
+
+    // By-name attach (`waitFor`) is open-ended by design -- bounded only by
+    // the user going and starting their program elsewhere, possibly minutes
+    // later. A fixed timeout would defeat the entire feature, so it's
+    // skipped for that path only; launch and by-pid attach are both fast,
+    // adapter-local operations and keep the guard below. Cancelling an
+    // unbounded wait still works via the normal terminate()/quit path --
+    // that only needs `this.client`/`this.child`, both set immediately after
+    // the adapter spawns, well before the attach request resolves.
+    const isByNameAttach =
+      this.options.attach !== undefined && "name" in this.options.attach;
 
     // Guards the whole handshake against any single step hanging forever
     // (adapter spawn wedged, initialize/launch never answered, etc.) --
@@ -127,16 +152,23 @@ export class DebugSession {
     // process's event loop alive (blocking process exit for up to 20s)
     // even after the handshake has already won.
     let timeoutHandle: NodeJS.Timeout | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutHandle = setTimeout(
-        () =>
-          reject(new Error("debug adapter handshake timed out after 20000ms")),
-        20_000,
-      );
-    });
+    const handshake = isByNameAttach
+      ? this.runHandshake()
+      : Promise.race([
+          this.runHandshake(),
+          new Promise<never>((_, reject) => {
+            timeoutHandle = setTimeout(
+              () =>
+                reject(
+                  new Error("debug adapter handshake timed out after 20000ms"),
+                ),
+              20_000,
+            );
+          }),
+        ]);
 
     try {
-      await Promise.race([this.runHandshake(), timeout]);
+      await handshake;
       this.phase = "configuring";
       this.emitSnapshot();
     } catch (err) {
@@ -190,6 +222,14 @@ export class DebugSession {
       locale: "en-US",
     });
 
+    if (this.options.attach) {
+      await this.runAttachHandshake(client, this.options.attach);
+    } else {
+      await this.runLaunchHandshake(client);
+    }
+  }
+
+  private async runLaunchHandshake(client: DapClient): Promise<void> {
     // Real lldb-dap only emits `initialized` once it starts processing
     // `launch`, not right after `initialize` responds (confirmed
     // empirically -- see scripts/smoke-test.ts). Fire launch first.
@@ -197,11 +237,11 @@ export class DebugSession {
       client.once("initialized", () => resolve()),
     );
     const launchArgs = this.adapter.buildLaunchArgs({
-      program: this.options.programPath,
+      program: this.options.programPath!,
       cwd: this.options.cwd,
     });
     const launchRequestPromise = this.sendRequest("launch", launchArgs);
-    this.launchPromise = launchRequestPromise;
+    this.handshakeRequestPromise = launchRequestPromise;
 
     // If launch fails outright (e.g. bad --program path), `initialized`
     // will never arrive -- propagate that failure instead of hanging.
@@ -210,6 +250,42 @@ export class DebugSession {
     await Promise.race([
       initializedPromise,
       launchRequestPromise.then(() => new Promise<void>(() => {})),
+    ]);
+  }
+
+  /**
+   * Mirrors runLaunchHandshake()'s `initialized`-timing quirk -- assumed
+   * (not independently reverse-engineered) to hold for `attach` too, since
+   * lldb-dap routes both through the same launch/attach responder pattern.
+   * By-name attach additionally flips the phase to 'waiting' before sending
+   * the request, since lldb-dap holds off responding while it polls for a
+   * matching process (confirmed via the `Waiting to attach to "%s"...` log
+   * string present in the binary).
+   */
+  private async runAttachHandshake(
+    client: DapClient,
+    attach: { pid: number } | { name: string },
+  ): Promise<void> {
+    const isByName = "name" in attach;
+    if (isByName) {
+      this.phase = "waiting";
+      this.emitSnapshot();
+    }
+
+    const initializedPromise = new Promise<void>((resolve) =>
+      client.once("initialized", () => resolve()),
+    );
+    const attachArgs = this.adapter.buildAttachArgs({
+      pid: "pid" in attach ? attach.pid : undefined,
+      name: isByName ? attach.name : undefined,
+      cwd: this.options.cwd,
+    });
+    const attachRequestPromise = this.sendRequest("attach", attachArgs);
+    this.handshakeRequestPromise = attachRequestPromise;
+
+    await Promise.race([
+      initializedPromise,
+      attachRequestPromise.then(() => new Promise<void>(() => {})),
     ]);
   }
 
@@ -268,7 +344,7 @@ export class DebugSession {
     }
     this.client = undefined;
     this.child = undefined;
-    this.launchPromise = undefined;
+    this.handshakeRequestPromise = undefined;
     this.errorMessage = undefined;
     this.breakpoints.clear();
     this.watches = this.watches.map((w) => ({
@@ -627,7 +703,7 @@ export class DebugSession {
     return {
       phase: this.phase,
       adapterId: this.adapter.id,
-      programPath: this.options.programPath,
+      programPath: this.programLabel,
       sourcePath: this.options.sourcePath,
       errorMessage: this.errorMessage,
       breakpoints,

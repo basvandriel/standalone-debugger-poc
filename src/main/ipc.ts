@@ -1,11 +1,18 @@
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { ipcMain, type BrowserWindow } from 'electron';
 import { IPC } from '../shared/types.js';
 import type { DebugSession } from '../engine/session/DebugSession.js';
+import { listSourceFiles } from '../engine/workspace/listSourceFiles.js';
 
 export function registerIpcHandlers(window: BrowserWindow, session: DebugSession): void {
   ipcMain.handle(IPC.GET_INITIAL_STATE, () => session.getSnapshot());
-  ipcMain.handle(IPC.READ_SOURCE_FILE, (_event, path: string) => readFile(path, 'utf8'));
+  ipcMain.handle(IPC.READ_SOURCE_FILE, (_event, filePath: string) => readFile(filePath, 'utf8'));
+  // Takes a source *file* path, not a directory -- the renderer has no Node
+  // `path` module to compute a dirname with, so main does it here.
+  ipcMain.handle(IPC.LIST_SOURCE_FILES, (_event, sourcePath: string) =>
+    listSourceFiles(path.dirname(sourcePath)).catch(() => []),
+  );
   ipcMain.handle(IPC.TOGGLE_BREAKPOINT, (_event, file: string, line: number) => session.toggleBreakpoint(file, line));
   ipcMain.handle(IPC.BEGIN_EXECUTION, () => session.beginExecution());
   ipcMain.handle(IPC.CONTINUE_EXECUTION, () => session.continueExecution());

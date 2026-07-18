@@ -1,7 +1,15 @@
-import type { LldbDapLaunchArguments } from '../dap/protocol.js';
+import type { LldbDapAttachArguments, LldbDapLaunchArguments } from '../dap/protocol.js';
 
 export interface LaunchArgsOptions {
   program: string;
+  cwd: string;
+}
+
+export interface AttachArgsOptions {
+  /** Attach to an already-running process by id. */
+  pid?: number;
+  /** Attach-by-name: poll until a process matching this path/name appears. */
+  name?: string;
   cwd: string;
 }
 
@@ -15,4 +23,5 @@ export interface AdapterDefinition {
   resolveExecutable(): Promise<string>;
   spawnArgs: string[];
   buildLaunchArgs(opts: LaunchArgsOptions): LldbDapLaunchArguments;
+  buildAttachArgs(opts: AttachArgsOptions): LldbDapAttachArguments;
 }

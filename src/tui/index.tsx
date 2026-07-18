@@ -22,11 +22,13 @@ if (!adapter) {
   process.exit(1);
 }
 
-try {
-  await access(cliOptions.program);
-} catch {
-  console.error(`dbg: program binary does not exist: ${cliOptions.program}`);
-  process.exit(1);
+if (cliOptions.mode === "run") {
+  try {
+    await access(cliOptions.program!);
+  } catch {
+    console.error(`dbg: program binary does not exist: ${cliOptions.program}`);
+    process.exit(1);
+  }
 }
 
 let logHandle: FileHandle | undefined;
@@ -94,12 +96,22 @@ function writeLog(message: string): void {
 }
 
 const session = new DebugSession(
-  {
-    adapterId: cliOptions.adapter,
-    programPath: cliOptions.program,
-    sourcePath: cliOptions.source,
-    cwd: cliOptions.cwd,
-  },
+  cliOptions.mode === "run"
+    ? {
+        adapterId: cliOptions.adapter,
+        programPath: cliOptions.program!,
+        sourcePath: cliOptions.source,
+        cwd: cliOptions.cwd,
+      }
+    : {
+        adapterId: cliOptions.adapter,
+        sourcePath: cliOptions.source,
+        cwd: cliOptions.cwd,
+        attach:
+          cliOptions.attachPid !== undefined
+            ? { pid: cliOptions.attachPid }
+            : { name: cliOptions.attachName! },
+      },
   adapter,
 );
 

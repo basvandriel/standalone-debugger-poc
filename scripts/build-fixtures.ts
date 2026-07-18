@@ -28,6 +28,24 @@ async function buildRustFixture(): Promise<void> {
   );
 }
 
+async function buildMultiFileFixture(): Promise<void> {
+  const fixturePath = path.join(repoRoot, "fixtures", "multi-file-demo");
+  await run(
+    "cargo",
+    ["build", "--manifest-path", path.join(fixturePath, "Cargo.toml")],
+    repoRoot,
+  );
+}
+
+async function buildAttachDemoFixture(): Promise<void> {
+  const fixturePath = path.join(repoRoot, "fixtures", "attach-demo");
+  await run(
+    "cargo",
+    ["build", "--manifest-path", path.join(fixturePath, "Cargo.toml")],
+    repoRoot,
+  );
+}
+
 async function buildCFixture(): Promise<void> {
   const targetDir = path.join(
     repoRoot,
@@ -77,6 +95,8 @@ async function main(): Promise<void> {
   await buildRustFixture();
   await buildCFixture();
   await buildCppFixture();
+  await buildMultiFileFixture();
+  await buildAttachDemoFixture();
   console.log("Fixture build complete.");
 }
 
