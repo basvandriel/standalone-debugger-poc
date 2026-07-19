@@ -8,7 +8,7 @@
 import assert from "node:assert/strict";
 import { DebugSession } from "../src/engine/session/DebugSession.js";
 import { lldbDapAdapter } from "../src/engine/adapters/lldbDap.js";
-import { getFixtureConfig } from "./fixtures.js";
+import { getFixtureConfig, normalizePath } from "./fixtures.js";
 import type { SessionSnapshot, OutputEntry } from "../src/shared/types.js";
 
 const FIXTURE = getFixtureConfig("loop-demo");

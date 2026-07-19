@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { spawn, type ChildProcess } from "node:child_process";
 import { DebugSession } from "../src/engine/session/DebugSession.js";
 import { lldbDapAdapter } from "../src/engine/adapters/lldbDap.js";
-import { getFixtureConfig } from "./fixtures.js";
+import { getFixtureConfig, normalizePath } from "./fixtures.js";
 import type { SessionSnapshot } from "../src/shared/types.js";
 
 const FIXTURE = getFixtureConfig("attach-demo");
@@ -142,8 +142,8 @@ async function main(): Promise<void> {
     assert.ok(hit.stack.length > 0, "expected a non-empty call stack");
     assert.equal(hit.stack[0]?.line, BREAKPOINT_LINE);
     assert.equal(
-      hit.stack[0]?.sourcePath,
-      SOURCE,
+      normalizePath(hit.stack[0]?.sourcePath ?? ""),
+      normalizePath(SOURCE),
       "expected the stopped frame's source path to match the fixture's main.rs",
     );
 

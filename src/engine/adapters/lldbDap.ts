@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { access } from 'node:fs/promises';
+import path from 'node:path';
 import { promisify } from 'node:util';
 import type { AdapterDefinition } from './types.js';
 
@@ -26,6 +27,34 @@ async function resolveExecutable(): Promise<string> {
     }
     cachedExecutablePath = MACOS_FALLBACK;
     return MACOS_FALLBACK;
+  }
+
+  if (process.platform === 'win32') {
+    try {
+      const { stdout } = await execFileAsync('where', ['lldb-dap']);
+      const resolved = stdout.split(/\r?\n/)[0]?.trim();
+      if (resolved) {
+        cachedExecutablePath = resolved;
+        return resolved;
+      }
+    } catch {
+      // fall through to known install locations
+    }
+    const programFiles = process.env['ProgramFiles'] ?? 'C:\\Program Files';
+    const windowsCandidates = [
+      path.join(programFiles, 'LLVM', 'bin', 'lldb-dap.exe'),
+    ];
+    for (const candidate of windowsCandidates) {
+      try {
+        await access(candidate);
+        cachedExecutablePath = candidate;
+        return candidate;
+      } catch {
+        // try next
+      }
+    }
+    cachedExecutablePath = 'lldb-dap.exe';
+    return 'lldb-dap.exe';
   }
 
   // Linux: check known install locations in order
