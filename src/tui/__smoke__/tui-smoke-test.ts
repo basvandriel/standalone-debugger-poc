@@ -52,6 +52,10 @@ async function main(): Promise<void> {
     commandBarOpen: false,
     commandBarValue: "",
     collapsedPanels: new Set(),
+    activeSourcePath: undefined,
+    knownSourceFiles: [],
+    fileSwitcherOpen: false,
+    fileSwitcherQuery: "",
   });
   useDbgStore.setState({ snapshot: undefined, output: [], dapLog: [] });
 
@@ -100,6 +104,11 @@ async function main(): Promise<void> {
   console.log("[tui-smoke] breakpoint set and verified at line 7");
 
   // Start execution, wait for the breakpoint to hit.
+  // Sleep before sending 'c' to let Ink re-render with the latest snapshot --
+  // useTuiKeybindings guards on the render-time snapshot prop being non-null,
+  // and the waitFor above only confirms the zustand store updated, not that
+  // the component tree has flushed the new snapshot into the hook closure yet.
+  await sleep(200);
   stdin.write("c");
   await waitFor(
     () => useDbgStore.getState().snapshot?.phase === "stopped",
@@ -165,6 +174,7 @@ async function main(): Promise<void> {
       (useDbgStore.getState().snapshot?.breakpoints[SOURCE]?.length ?? 0) === 0,
     "breakpoint cleared",
   );
+  await sleep(200);
   stdin.write("c");
   await waitFor(
     () => useDbgStore.getState().snapshot?.phase === "terminated",
@@ -201,6 +211,7 @@ async function main(): Promise<void> {
 
   // Pressing 'c' (start/continue) while EXITED restarts the session --
   // this is exactly the "can't restart after exited" bug the TUI hit.
+  await sleep(200);
   stdin.write("c");
   await waitFor(
     () => useDbgStore.getState().snapshot?.phase === "configuring",
@@ -223,6 +234,7 @@ async function main(): Promise<void> {
     "expected breakpoint to be verified on the restarted adapter",
   );
 
+  await sleep(200);
   stdin.write("c");
   await waitFor(
     () => useDbgStore.getState().snapshot?.phase === "stopped",
