@@ -1,0 +1,162 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  # Engine-level smoke tests: real lldb-dap, no Ink rendering.
+  # Run on both platforms to verify the DAP layer and adapter resolver work on Linux.
+  engine:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          npm-version: 10.9.3
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache lldb-dap binary
+        if: runner.os == 'Linux'
+        id: cache-lldb
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/lldb-dap
+          key: ${{ runner.os }}-lldb-dap-v1
+
+      - name: Install lldb-dap (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          if [ -f "$HOME/.cache/lldb-dap/lldb-dap" ]; then
+            echo "Restoring lldb-dap from cache"
+            sudo cp "$HOME/.cache/lldb-dap/lldb-dap" /usr/local/bin/lldb-dap
+            sudo chmod +x /usr/local/bin/lldb-dap
+          else
+            sudo apt-get install -y --no-install-recommends lldb
+            LLDB_DAP=$(find /usr -name 'lldb-dap*' -type f 2>/dev/null | head -1)
+            if [ -z "$LLDB_DAP" ]; then
+              echo "ERROR: lldb-dap binary not found after installing lldb"
+              exit 1
+            fi
+            sudo ln -sf "$LLDB_DAP" /usr/local/bin/lldb-dap
+            mkdir -p "$HOME/.cache/lldb-dap"
+            cp "$LLDB_DAP" "$HOME/.cache/lldb-dap/lldb-dap"
+          fi
+          lldb-dap --version
+
+      - name: Cache Rust build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            fixtures/loop-demo/target
+            fixtures/multi-file-demo/target
+            fixtures/attach-demo/target
+            fixtures/c-loop/target
+            fixtures/cpp-loop/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('fixtures/**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build fixtures
+        run: npm run build:fixtures
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Allow ptrace for attach smoke test (Linux)
+        if: runner.os == 'Linux'
+        run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+      - name: Engine smoke tests
+        run: |
+          npm run smoke
+          npm run smoke:session
+          npm run smoke:multifile
+          npm run smoke:attach
+
+      - name: Check for orphaned lldb-dap processes
+        if: always()
+        run: |
+          if ps aux | grep -v grep | grep -q lldb-dap; then
+            echo "FAIL: orphaned lldb-dap processes found after smoke tests"
+            ps aux | grep -v grep | grep lldb-dap
+            exit 1
+          else
+            echo "OK: no orphaned lldb-dap processes"
+          fi
+
+  # TUI smoke tests: real Ink rendering + keybinding handlers via ink-testing-library.
+  # macOS only — ink-testing-library's fake stdin has unreliable input delivery
+  # on Linux (the useInput hook doesn't reliably fire for stdin.write() calls),
+  # which is a known ink-testing-library/Linux incompatibility, not a bug in
+  # the TUI itself. The engine job above covers all DAP correctness on Linux.
+  tui:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          npm-version: 10.9.3
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            fixtures/loop-demo/target
+            fixtures/multi-file-demo/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: macos-cargo-tui-${{ hashFiles('fixtures/loop-demo/Cargo.lock', 'fixtures/multi-file-demo/Cargo.lock') }}
+          restore-keys: macos-cargo-tui-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build fixtures
+        run: npm run build:fixtures
+
+      - name: TUI smoke tests
+        run: |
+          npm run smoke:tui
+          npm run smoke:tui:multifile
+
+      - name: Check for orphaned lldb-dap processes
+        if: always()
+        run: |
+          if ps aux | grep -v grep | grep -q lldb-dap; then
+            echo "FAIL: orphaned lldb-dap processes found after smoke tests"
+            ps aux | grep -v grep | grep lldb-dap
+            exit 1
+          else
+            echo "OK: no orphaned lldb-dap processes"
+          fi
+
+# The following from the test plan require a human and cannot run in CI:
+#
+#   Manual: npm run tui:fixture:multi -> press f, jump to report.rs, set
+#   breakpoint, run, verify auto-follow
+#
+#   Manual: npm run tui:fixture:attach in one terminal, start the binary in
+#   another, verify WATCHING -> READY
+#
+# Both flows are covered headlessly by smoke:tui:multifile and smoke:attach
+# respectively — CI catches regressions; the manual passes verify real terminal
+# rendering and interaction that ink-testing-library structurally cannot see.

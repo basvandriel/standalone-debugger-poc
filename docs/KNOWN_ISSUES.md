@@ -18,6 +18,38 @@
   than being an oversight — see [KEYBINDINGS.md](KEYBINDINGS.md) for the
   full keyboard-only interaction model.
 
+## Attach (`dbg attach`) limitations
+
+- **Very early breakpoints can race the attach.** Attach happens *after* the
+  target process already exists (whether via `--pid` or `--name`'s
+  `waitFor`), so a breakpoint on the first lines of `main()` can occasionally
+  be missed if execution reaches that point before `setBreakpoints` completes
+  against the newly-attached process. This is an OS/DAP-level limitation of
+  attach in general, not something `dbg`'s UI can fully paper over.
+- **By-name attach (`--name`) waits with no timeout, by design.** `waitFor`
+  is inherently open-ended -- the whole point is that the target can be
+  started whenever, from anywhere (VS Code, a shell, etc.) -- so
+  `DebugSession.start()` deliberately skips its usual 20-second handshake
+  guard for this path only. Cancel with the normal quit/Ctrl+C path at any
+  time; `--pid` and `run` (launch) both keep the 20s guard since those are
+  fast, adapter-local operations.
+- **`lldb-dap`'s `waitFor` needs a brief moment to arm after the `attach`
+  request is sent.** Confirmed empirically while building
+  `scripts/attach-smoke-test.ts`: a target process spawned immediately after
+  `dbg` reaches the `waiting` phase is reliably missed with no retry;
+  spawning it even a couple seconds later is reliably caught. A human
+  reacting to the "watching for X" status bar badge takes far longer than
+  this window, so it's a non-issue in real use -- it only matters for
+  anything scripting the attach flow tightly (see
+  [TESTING.md](TESTING.md)).
+- **`--name`'s process-matching semantics beyond an exact path aren't fully
+  characterized.** `dbg attach --name <path>` resolves `<path>` to an
+  absolute path (the same way `run`'s `--program` is resolved) before
+  sending it as `attach`'s `program` field, since that's the only matching
+  behavior this project has verified end-to-end. Whether `lldb-dap` also
+  matches on a bare process name, a partial path, or handles symlinks/renamed
+  binaries hasn't been explored.
+
 ## Open: TUI can still be scrolled out of, in some terminals
 
 **Status: partially mitigated, not fully solved, and not fully diagnosed.**

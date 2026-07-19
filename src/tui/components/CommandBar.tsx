@@ -7,7 +7,7 @@ import { COLORS } from '../theme.js';
 import type { DebugSession } from '../../engine/session/DebugSession.js';
 
 interface CommandBarProps {
-  sourcePath: string;
+  sourcePath: string | undefined;
   session: DebugSession;
   exit: () => void;
 }
@@ -52,7 +52,7 @@ export function CommandBar({ sourcePath, session, exit }: CommandBarProps) {
 
     if (cmd === 'watch' && arg) {
       void session.addWatch(arg);
-    } else if (cmd === 'bp' && arg) {
+    } else if (cmd === 'bp' && arg && sourcePath) {
       const line = Number(arg);
       if (Number.isFinite(line) && line > 0) void session.toggleBreakpoint(sourcePath, line);
     } else if (cmd === 'quit' || cmd === 'q') {

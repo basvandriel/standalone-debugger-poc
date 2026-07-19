@@ -19,12 +19,16 @@ export function SourcePanel({ snapshot, highlightedLines, contentHeight }: Sourc
   const sourceLines = useUiStore((s) => s.sourceLines);
   const cursorLine = useUiStore((s) => s.cursorLine);
   const focusedPanel = useUiStore((s) => s.focusedPanel);
+  const activeSourcePath = useUiStore((s) => s.activeSourcePath);
   const isFocused = focusedPanel === 'source';
 
-  const breakpoints = snapshot.breakpoints[snapshot.sourcePath] ?? [];
+  const breakpoints = activeSourcePath ? (snapshot.breakpoints[activeSourcePath] ?? []) : [];
   const breakpointByLine = new Map(breakpoints.map((b) => [b.line, b]));
   const currentFrame = snapshot.stack.find((f) => f.id === snapshot.selectedFrameId);
-  const currentLine = currentFrame?.sourcePath === snapshot.sourcePath ? currentFrame.line : undefined;
+  const currentLine =
+    activeSourcePath !== undefined && currentFrame?.sourcePath === activeSourcePath
+      ? currentFrame.line
+      : undefined;
   const activeLine = currentLine ?? (isFocused ? cursorLine : undefined);
 
   const [windowStart, setWindowStart] = useState(0);
@@ -37,7 +41,7 @@ export function SourcePanel({ snapshot, highlightedLines, contentHeight }: Sourc
   return (
     <PanelFrame
       id="source"
-      title={snapshot.sourcePath.split('/').pop() ?? snapshot.sourcePath}
+      title={activeSourcePath ? (activeSourcePath.split('/').pop() ?? activeSourcePath) : '(no file)'}
       focused={isFocused}
       contentHeight={contentHeight}
     >

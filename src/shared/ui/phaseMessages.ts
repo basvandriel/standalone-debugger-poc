@@ -11,6 +11,8 @@ export function emptyStackMessage(phase: SessionPhase, startKeyHint: string): st
   switch (phase) {
     case 'initializing':
       return '(starting debug adapter...)';
+    case 'waiting':
+      return '(watching for the target process to start...)';
     case 'configuring':
       return `(not started -- press ${startKeyHint} to begin)`;
     case 'running':

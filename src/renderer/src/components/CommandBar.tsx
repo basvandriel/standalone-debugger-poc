@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useUiStore } from '@shared/ui/useUiStore';
 
 interface CommandBarProps {
-  sourcePath: string;
+  sourcePath: string | undefined;
 }
 
 export function CommandBar({ sourcePath }: CommandBarProps) {
@@ -25,7 +25,7 @@ export function CommandBar({ sourcePath }: CommandBarProps) {
 
     if (cmd === 'watch' && arg) {
       window.dbg.addWatch(arg);
-    } else if (cmd === 'bp' && arg) {
+    } else if (cmd === 'bp' && arg && sourcePath) {
       const line = Number(arg);
       if (Number.isFinite(line) && line > 0) window.dbg.toggleBreakpoint(sourcePath, line);
     } else if (cmd === 'quit' || cmd === 'q') {

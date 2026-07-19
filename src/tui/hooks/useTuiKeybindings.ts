@@ -21,10 +21,15 @@ export function useTuiKeybindings(
     const ui = useUiStore.getState();
 
     if (ui.commandBarOpen) return; // CommandBar owns input while open.
+    if (ui.fileSwitcherOpen) return; // FileSwitcher owns input while open.
     if (!snapshot) return;
 
     if (input === TUI_KEYS.commandBar) {
       ui.openCommandBar();
+      return;
+    }
+    if (input === TUI_KEYS.switchFile) {
+      ui.openFileSwitcher();
       return;
     }
     if (key.tab) {
@@ -36,7 +41,7 @@ export function useTuiKeybindings(
       return;
     }
     if (input === TUI_KEYS.toggleBreakpoint) {
-      void session.toggleBreakpoint(snapshot.sourcePath, ui.cursorLine);
+      if (ui.activeSourcePath) void session.toggleBreakpoint(ui.activeSourcePath, ui.cursorLine);
       return;
     }
     if (input === TUI_KEYS.stepOver) {

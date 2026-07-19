@@ -52,6 +52,10 @@ async function main(): Promise<void> {
     commandBarOpen: false,
     commandBarValue: "",
     collapsedPanels: new Set(),
+    activeSourcePath: undefined,
+    knownSourceFiles: [],
+    fileSwitcherOpen: false,
+    fileSwitcherQuery: "",
   });
   useDbgStore.setState({ snapshot: undefined, output: [], dapLog: [] });
 

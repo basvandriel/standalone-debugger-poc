@@ -24,6 +24,7 @@ export function useKeybindings(snapshot: SessionSnapshot | undefined): void {
       const snap = snapshotRef.current;
 
       if (ui.commandBarOpen) return; // CommandBar's own input owns typing/Enter/Escape.
+      if (ui.fileSwitcherOpen) return; // FileSwitcher's own input owns typing/Enter/Escape.
 
       const activeElement = document.activeElement;
       const isTextInput = activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement;
@@ -32,6 +33,11 @@ export function useKeybindings(snapshot: SessionSnapshot | undefined): void {
       if (!snap) return;
 
       // Global VS Code-style debug actions -- work regardless of focused panel.
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
+        event.preventDefault();
+        ui.openFileSwitcher();
+        return;
+      }
       switch (event.key) {
         case ELECTRON_KEYS.commandBar:
           event.preventDefault();
@@ -43,7 +49,7 @@ export function useKeybindings(snapshot: SessionSnapshot | undefined): void {
           return;
         case ELECTRON_KEYS.toggleBreakpoint:
           event.preventDefault();
-          void window.dbg.toggleBreakpoint(snap.sourcePath, ui.cursorLine);
+          if (ui.activeSourcePath) void window.dbg.toggleBreakpoint(ui.activeSourcePath, ui.cursorLine);
           return;
         case ELECTRON_KEYS.stepOver:
           if (snap.phase === 'stopped') {
