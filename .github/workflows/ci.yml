@@ -18,7 +18,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          npm-version: 10.9.3
           cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
