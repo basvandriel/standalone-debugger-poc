@@ -3,6 +3,12 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_ROOT = path.join(__dirname, "..", "fixtures");
+const EXE = process.platform === "win32" ? ".exe" : "";
+
+/** Normalize path separators to forward slashes for cross-platform comparisons. */
+export function normalizePath(p: string): string {
+  return p.replace(/\\/g, "/");
+}
 
 export interface FixtureConfig {
   name: string;
@@ -22,7 +28,7 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
       "loop-demo",
       "target",
       "debug",
-      "loop-demo",
+      `loop-demo${EXE}`,
     ),
     source: path.join(FIXTURES_ROOT, "loop-demo", "src", "main.rs"),
     breakpointLine: 7,
@@ -31,7 +37,7 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
   "c-loop": {
     name: "c-loop",
     cwd: path.join(FIXTURES_ROOT, "c-loop"),
-    program: path.join(FIXTURES_ROOT, "c-loop", "target", "debug", "c-loop"),
+    program: path.join(FIXTURES_ROOT, "c-loop", "target", "debug", `c-loop${EXE}`),
     source: path.join(FIXTURES_ROOT, "c-loop", "src", "main.c"),
     breakpointLine: 32,
     expectedSummary: "items=[2, 4, 6, 8, 10] total=30",
@@ -44,7 +50,7 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
       "cpp-loop",
       "target",
       "debug",
-      "cpp-loop",
+      `cpp-loop${EXE}`,
     ),
     source: path.join(FIXTURES_ROOT, "cpp-loop", "src", "main.cpp"),
     breakpointLine: 28,
@@ -58,7 +64,7 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
       "multi-file-demo",
       "target",
       "debug",
-      "multi-file-demo",
+      `multi-file-demo${EXE}`,
     ),
     source: path.join(FIXTURES_ROOT, "multi-file-demo", "src", "main.rs"),
     breakpointLine: 5,
@@ -72,7 +78,7 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
       "attach-demo",
       "target",
       "debug",
-      "attach-demo",
+      `attach-demo${EXE}`,
     ),
     source: path.join(FIXTURES_ROOT, "attach-demo", "src", "main.rs"),
     breakpointLine: 11,

@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { DebugSession } from "../src/engine/session/DebugSession.js";
 import { lldbDapAdapter } from "../src/engine/adapters/lldbDap.js";
-import { getFixtureConfig } from "./fixtures.js";
+import { getFixtureConfig, normalizePath } from "./fixtures.js";
 import type { SessionSnapshot, OutputEntry } from "../src/shared/types.js";
 
 const FIXTURE = getFixtureConfig("multi-file-demo");
@@ -96,8 +96,8 @@ async function main(): Promise<void> {
     );
     assert.ok(stopped.stack.length > 0, "expected a non-empty call stack");
     assert.equal(
-      stopped.stack[0]?.sourcePath,
-      REPORT_PATH,
+      normalizePath(stopped.stack[0]?.sourcePath ?? ""),
+      normalizePath(REPORT_PATH),
       "expected the stopped frame's source path to be report.rs, not main.rs",
     );
     assert.equal(stopped.stack[0]?.line, REPORT_LINE);

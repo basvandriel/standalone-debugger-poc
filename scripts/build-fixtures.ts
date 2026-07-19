@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
+const EXE = process.platform === "win32" ? ".exe" : "";
 
 async function run(
   command: string,
@@ -61,7 +62,7 @@ async function buildCFixture(): Promise<void> {
       "-g",
       "-O0",
       "-o",
-      path.join(targetDir, "c-loop"),
+      path.join(targetDir, `c-loop${EXE}`),
       path.join(repoRoot, "fixtures", "c-loop", "src", "main.c"),
     ],
     repoRoot,
@@ -83,7 +84,7 @@ async function buildCppFixture(): Promise<void> {
       "-g",
       "-O0",
       "-o",
-      path.join(targetDir, "cpp-loop"),
+      path.join(targetDir, `cpp-loop${EXE}`),
       path.join(repoRoot, "fixtures", "cpp-loop", "src", "main.cpp"),
     ],
     repoRoot,
