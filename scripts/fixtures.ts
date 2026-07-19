@@ -39,7 +39,9 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
     cwd: path.join(FIXTURES_ROOT, "c-loop"),
     program: path.join(FIXTURES_ROOT, "c-loop", "target", "debug", `c-loop${EXE}`),
     source: path.join(FIXTURES_ROOT, "c-loop", "src", "main.c"),
-    breakpointLine: 32,
+    // Line 34: `total += doubled` — at this point doubled=2 and total=0 are both
+    // in scope with known values, matching the Rust fixture's assertion expectations.
+    breakpointLine: 34,
     expectedSummary: "items=[2, 4, 6, 8, 10] total=30",
   },
   "cpp-loop": {

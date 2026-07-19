@@ -11,11 +11,14 @@ import { lldbDapAdapter } from "../src/engine/adapters/lldbDap.js";
 import { getFixtureConfig, normalizePath } from "./fixtures.js";
 import type { SessionSnapshot, OutputEntry } from "../src/shared/types.js";
 
-const FIXTURE = getFixtureConfig("loop-demo");
+// LLDB 20 on Windows crashes (0xC0000409) reading Rust PDB debug symbols during
+// scopes/variables requests. The C fixture has simpler COFF/PDB symbols that
+// LLDB handles correctly. Variable names and expected output are identical.
+const FIXTURE = getFixtureConfig(process.platform === "win32" ? "c-loop" : "loop-demo");
 const FIXTURE_DIR = FIXTURE.cwd;
 const PROGRAM = FIXTURE.program;
 const SOURCE = FIXTURE.source;
-const BREAKPOINT_LINE = FIXTURE.breakpointLine; // `total += doubled as i64;`
+const BREAKPOINT_LINE = FIXTURE.breakpointLine;
 
 function waitForPhase(
   session: DebugSession,
@@ -128,9 +131,10 @@ async function main(): Promise<void> {
     stopped.stack.map((f) => `${f.name}@${f.line}`),
   );
   assert.ok(stopped.stack.length > 0, "expected a non-empty call stack");
+  const expectedFrame = FIXTURE.name === "loop-demo" ? "loop_demo::main" : "main";
   assert.ok(
-    stopped.stack[0]?.name.startsWith("loop_demo::main"),
-    "expected top frame to be loop_demo::main",
+    stopped.stack[0]?.name.startsWith(expectedFrame),
+    `expected top frame to start with "${expectedFrame}"`,
   );
   assert.equal(stopped.stack[0]?.line, BREAKPOINT_LINE);
 
