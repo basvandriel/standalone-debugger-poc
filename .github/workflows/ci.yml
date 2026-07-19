@@ -71,26 +71,30 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Cache LLVM installation (Windows)
+        if: runner.os == 'Windows'
+        id: cache-lldb-win
+        uses: actions/cache@v4
+        with:
+          path: C:\Program Files\LLVM
+          key: windows-llvm-20-v1
+
+      - name: Install LLVM (Windows)
+        if: runner.os == 'Windows' && steps.cache-lldb-win.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: choco install llvm --version=20.1.8 --yes --no-progress
+
       - name: Add lldb-dap to PATH (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $candidate = "C:\Program Files\LLVM\bin"
-          if (Test-Path "$candidate\lldb-dap.exe") {
-            echo "$candidate" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-            Write-Host "Found lldb-dap.exe at $candidate"
-          } else {
-            # Search other known locations
-            $found = Get-ChildItem "C:\Program Files" -Recurse -Filter "lldb-dap.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) {
-              $dir = $found.DirectoryName
-              echo "$dir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-              Write-Host "Found lldb-dap.exe at $dir"
-            } else {
-              Write-Error "lldb-dap.exe not found anywhere under C:\Program Files"
-              exit 1
-            }
+          $bin = "C:\Program Files\LLVM\bin"
+          if (-not (Test-Path "$bin\lldb-dap.exe")) {
+            Write-Error "lldb-dap.exe not found at $bin after LLVM install"
+            exit 1
           }
+          echo "$bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "lldb-dap.exe ready at $bin"
 
       - name: Allow ptrace for attach smoke test (Linux)
         if: runner.os == 'Linux'
