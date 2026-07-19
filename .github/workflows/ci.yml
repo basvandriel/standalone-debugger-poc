@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: ["**"]
-  pull_request:
-    branches: [main]
 
 jobs:
   # Engine-level smoke tests: real lldb-dap, no Ink rendering.
@@ -26,26 +24,32 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache lldb apt package
+      - name: Cache lldb-dap binary
         if: runner.os == 'Linux'
+        id: cache-lldb
         uses: actions/cache@v4
         with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-lldb-${{ hashFiles('/etc/apt/sources.list', '/etc/apt/sources.list.d/**') }}
-          restore-keys: ${{ runner.os }}-apt-lldb-
+          path: ~/.cache/lldb-dap
+          key: ${{ runner.os }}-lldb-dap-v1
 
       - name: Install lldb-dap (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get install -y lldb
-          # apt installs a versioned binary (e.g. lldb-dap-18), not lldb-dap
-          LLDB_DAP=$(find /usr -name 'lldb-dap*' -type f 2>/dev/null | head -1)
-          if [ -z "$LLDB_DAP" ]; then
-            echo "ERROR: lldb-dap binary not found after installing lldb"
-            exit 1
+          if [ -f "$HOME/.cache/lldb-dap/lldb-dap" ]; then
+            echo "Restoring lldb-dap from cache"
+            sudo cp "$HOME/.cache/lldb-dap/lldb-dap" /usr/local/bin/lldb-dap
+            sudo chmod +x /usr/local/bin/lldb-dap
+          else
+            sudo apt-get install -y --no-install-recommends lldb
+            LLDB_DAP=$(find /usr -name 'lldb-dap*' -type f 2>/dev/null | head -1)
+            if [ -z "$LLDB_DAP" ]; then
+              echo "ERROR: lldb-dap binary not found after installing lldb"
+              exit 1
+            fi
+            sudo ln -sf "$LLDB_DAP" /usr/local/bin/lldb-dap
+            mkdir -p "$HOME/.cache/lldb-dap"
+            cp "$LLDB_DAP" "$HOME/.cache/lldb-dap/lldb-dap"
           fi
-          echo "Found lldb-dap at: $LLDB_DAP"
-          sudo ln -sf "$LLDB_DAP" /usr/local/bin/lldb-dap
           lldb-dap --version
 
       - name: Cache Rust build artifacts
