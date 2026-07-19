@@ -18,37 +18,39 @@
   than being an oversight — see [KEYBINDINGS.md](KEYBINDINGS.md) for the
   full keyboard-only interaction model.
 
-## Windows: Rust debugging crashes LLDB (C/C++ works)
+## Windows: Rust debugging requires CodeLLDB (standard LLVM crashes)
 
-**Rust debugging on Windows does not work with the standard LLVM installer.**
+**Standard LLVM `lldb-dap` crashes on Rust PDB debug symbols.** Use CodeLLDB
+instead (see below).
 
-`lldb-dap` from the official LLVM Windows package (via `choco install llvm`,
-`winget install LLVM.LLVM`, or the GitHub releases installer) crashes with
-`0xC0000409` (Windows security kill: stack buffer overrun detected by the
-`/GS` stack-cookie guard) when it tries to read Rust PDB debug symbols during
-a live session — specifically during the `scopes`/`variables` DAP requests
-that enumerate local variables after a breakpoint hits.
+`lldb-dap` from the official LLVM Windows package crashes with `0xC0000409`
+(Windows `/GS` security kill: stack buffer overrun) when reading Rust PDB debug
+symbols — specifically during the `scopes`/`variables` DAP requests after a
+breakpoint hits. C and C++ work fine.
 
-C and C++ debugging on Windows works correctly with the same binary.
+**Root cause:** LLDB's PDB reader was built for C/C++. Rust on the MSVC target
+produces PDB files with far more complex type encodings (generic
+monomorphizations, iterator internals, etc.) that trigger a stack buffer overrun
+in LLDB's PDB parsing code.
 
-**Root cause:** LLDB's Windows PDB reader was primarily built and tested for
-C/C++. Rust on Windows (MSVC target) produces PDB files, but with far more
-complex type encodings than C — generic monomorphizations, iterator internals,
-Rust-specific integer types, etc. LLDB's PDB parsing code has a stack buffer
-overrun bug that is triggered by these Rust-specific type records.
+**Fix: use CodeLLDB's bundled LLDB.** The adapter resolver on Windows
+(`src/engine/adapters/lldbDap.ts`) automatically prefers `codelldb.exe` over
+`lldb-dap.exe` because CodeLLDB ships a patched LLDB build with a working Rust
+PDB reader and Rust NatVis formatters. It checks (in order):
 
-**CI workaround:** the Windows CI job runs `smoke` and `smoke:session` against
-the C fixture (`c-loop`) to verify the DAP handshake, adapter resolver, `.exe`
-path handling, and end-to-end launch/breakpoint/continue flow on Windows.
-`smoke:multifile` and `smoke:attach` are not run on Windows (no C equivalents).
+1. `C:\codelldb\extension\adapter\codelldb.exe` — the CI/bundled download path
+2. `%USERPROFILE%\.vscode\extensions\vadimcn.vscode-lldb-*\extension\adapter\codelldb.exe` — the [CodeLLDB VS Code extension](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) auto-detected from your extensions directory
+3. `codelldb` on PATH
+4. Falls back to `lldb-dap` (C/C++ only)
 
-**For real Windows users:** Rust debugging via `lldb-dap` on Windows requires a
-custom-built LLDB with a patched PDB reader and Rust NatVis support. The
-[CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
-VS Code extension bundles exactly such a build and does support Rust debugging
-on Windows. If Windows Rust debugging becomes a priority, the most practical
-path is to bundle a known-good `lldb-dap` binary (the same one CodeLLDB ships)
-rather than relying on the user's system LLVM.
+**To get full Rust debugging on Windows:** install the [CodeLLDB VS Code
+extension](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
+(recommended — it also gives you Rust debugging in VS Code) or download the
+`codelldb-x86_64-windows.vsix` asset from the [CodeLLDB GitHub releases](https://github.com/vadimcn/codelldb/releases)
+and extract it to `C:\codelldb\`.
+
+**CI:** downloads the latest CodeLLDB Windows VSIX and runs the full Rust smoke
+suite (`smoke`, `smoke:session`, `smoke:multifile`).
 
 ## Attach (`dbg attach`) limitations
 
