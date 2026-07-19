@@ -30,12 +30,14 @@ async function bootstrap(
     return;
   }
 
-  try {
-    await access(options.program);
-  } catch {
-    console.error(`dbg: program binary does not exist: ${options.program}`);
-    app.exit(1);
-    return;
+  if (options.mode === "run") {
+    try {
+      await access(options.program!);
+    } catch {
+      console.error(`dbg: program binary does not exist: ${options.program}`);
+      app.exit(1);
+      return;
+    }
   }
 
   await app.whenReady();
@@ -72,12 +74,22 @@ async function bootstrap(
   });
 
   const session = new DebugSession(
-    {
-      adapterId: options.adapter,
-      programPath: options.program,
-      sourcePath: options.source,
-      cwd: options.cwd,
-    },
+    options.mode === "run"
+      ? {
+          adapterId: options.adapter,
+          programPath: options.program!,
+          sourcePath: options.source,
+          cwd: options.cwd,
+        }
+      : {
+          adapterId: options.adapter,
+          sourcePath: options.source,
+          cwd: options.cwd,
+          attach:
+            options.attachPid !== undefined
+              ? { pid: options.attachPid }
+              : { name: options.attachName! },
+        },
     adapter,
   );
 
