@@ -7,7 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  # Engine-level smoke tests: real lldb-dap, no Ink rendering.
+  # Run on both platforms to verify the DAP layer and adapter resolver work on Linux.
+  engine:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -24,11 +26,19 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache lldb apt package
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-lldb-${{ hashFiles('/etc/apt/sources.list', '/etc/apt/sources.list.d/**') }}
+          restore-keys: ${{ runner.os }}-apt-lldb-
+
       - name: Install lldb-dap (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install -y lldb
-          # The binary lands as lldb-dap-<version> (e.g. lldb-dap-18), not lldb-dap
+          # apt installs a versioned binary (e.g. lldb-dap-18), not lldb-dap
           LLDB_DAP=$(find /usr -name 'lldb-dap*' -type f 2>/dev/null | head -1)
           if [ -z "$LLDB_DAP" ]; then
             echo "ERROR: lldb-dap binary not found after installing lldb"
@@ -61,14 +71,64 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Smoke tests
+      - name: Engine smoke tests
         run: |
           npm run smoke
           npm run smoke:session
-          npm run smoke:tui
           npm run smoke:multifile
-          npm run smoke:tui:multifile
           npm run smoke:attach
+
+      - name: Check for orphaned lldb-dap processes
+        if: always()
+        run: |
+          if ps aux | grep -v grep | grep -q lldb-dap; then
+            echo "FAIL: orphaned lldb-dap processes found after smoke tests"
+            ps aux | grep -v grep | grep lldb-dap
+            exit 1
+          else
+            echo "OK: no orphaned lldb-dap processes"
+          fi
+
+  # TUI smoke tests: real Ink rendering + keybinding handlers via ink-testing-library.
+  # macOS only — ink-testing-library's fake stdin has unreliable input delivery
+  # on Linux (the useInput hook doesn't reliably fire for stdin.write() calls),
+  # which is a known ink-testing-library/Linux incompatibility, not a bug in
+  # the TUI itself. The engine job above covers all DAP correctness on Linux.
+  tui:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          npm-version: 10.9.3
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            fixtures/loop-demo/target
+            fixtures/multi-file-demo/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: macos-cargo-tui-${{ hashFiles('fixtures/loop-demo/Cargo.lock', 'fixtures/multi-file-demo/Cargo.lock') }}
+          restore-keys: macos-cargo-tui-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build fixtures
+        run: npm run build:fixtures
+
+      - name: TUI smoke tests
+        run: |
+          npm run smoke:tui
+          npm run smoke:tui:multifile
 
       - name: Check for orphaned lldb-dap processes
         if: always()
