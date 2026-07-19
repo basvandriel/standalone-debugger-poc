@@ -78,12 +78,19 @@ jobs:
           $candidate = "C:\Program Files\LLVM\bin"
           if (Test-Path "$candidate\lldb-dap.exe") {
             echo "$candidate" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-            Write-Host "Added $candidate to PATH"
+            Write-Host "Found lldb-dap.exe at $candidate"
           } else {
-            Write-Error "lldb-dap.exe not found at $candidate"
-            exit 1
+            # Search other known locations
+            $found = Get-ChildItem "C:\Program Files" -Recurse -Filter "lldb-dap.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) {
+              $dir = $found.DirectoryName
+              echo "$dir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              Write-Host "Found lldb-dap.exe at $dir"
+            } else {
+              Write-Error "lldb-dap.exe not found anywhere under C:\Program Files"
+              exit 1
+            }
           }
-          & "$candidate\lldb-dap.exe" --version
 
       - name: Allow ptrace for attach smoke test (Linux)
         if: runner.os == 'Linux'
