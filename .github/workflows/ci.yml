@@ -71,38 +71,58 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Set up Python (Windows — lldb-dap links against python3xx.dll)
-        if: runner.os == 'Windows'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
       - name: Cache LLVM installation (Windows)
         if: runner.os == 'Windows'
         id: cache-lldb-win
         uses: actions/cache@v4
         with:
           path: C:\Program Files\LLVM
-          key: windows-llvm-20-v3
+          key: windows-llvm-20-v4
 
       - name: Install LLVM (Windows)
         if: runner.os == 'Windows' && steps.cache-lldb-win.outputs.cache-hit != 'true'
         shell: pwsh
         run: choco install llvm --version=20.1.8 --yes --no-progress --force
 
-      - name: Diagnose lldb-dap (Windows)
+      - name: Diagnose and fix lldb-dap DLL dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $bin = "C:\Program Files\LLVM\bin"
-          Write-Host "=== DLLs in LLVM\bin ==="
+
+          # Show what dumpbin says lldb-dap.exe and liblldb.dll import.
+          # This reveals the exact missing DLL without guessing.
+          $dumpbin = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" `
+            -Recurse -Filter "dumpbin.exe" -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if ($dumpbin) {
+            Write-Host "=== lldb-dap.exe imports ==="
+            & $dumpbin.FullName /DEPENDENTS "$bin\lldb-dap.exe"
+            Write-Host "=== liblldb.dll imports ==="
+            & $dumpbin.FullName /DEPENDENTS "$bin\liblldb.dll"
+          } else {
+            Write-Host "dumpbin not found, listing DLLs in LLVM\bin:"
+            Get-ChildItem $bin -Filter "*.dll" | Select-Object -ExpandProperty Name | Sort-Object
+          }
+
+          # lldb-dap links liblldb which links python3xx.dll. The DLL is found
+          # via PATH when the SHELL sets it, but child_process.spawn in Node.js
+          # uses the inherited process env which may differ. Copy the Python DLL
+          # directly into LLVM\bin (step 1 of Windows DLL search = exe directory)
+          # so it is found unconditionally, regardless of PATH state.
+          $pyDlls = Get-ChildItem "C:\hostedtoolcache\windows\Python" `
+            -Recurse -Filter "python3*.dll" -ErrorAction SilentlyContinue
+          foreach ($dll in $pyDlls) {
+            Write-Host "Copying $($dll.Name) from $($dll.Directory) → $bin"
+            Copy-Item $dll.FullName "$bin\" -Force
+          }
+
+          Write-Host "=== DLLs in LLVM\bin after fixup ==="
           Get-ChildItem $bin -Filter "*.dll" | Select-Object -ExpandProperty Name | Sort-Object
-          Write-Host "=== liblldb.dll present: $(Test-Path "$bin\liblldb.dll") ==="
-          Write-Host "=== Python on PATH ==="
-          python --version
-          Write-Host "=== Try running lldb-dap --help ==="
-          $p = Start-Process -FilePath "$bin\lldb-dap.exe" -ArgumentList "--help" -Wait -PassThru -NoNewWindow -ErrorAction SilentlyContinue
-          Write-Host "Exit code: $($p.ExitCode)"
+
+          Write-Host "=== Test: lldb-dap --help ==="
+          & "$bin\lldb-dap.exe" --help
+          Write-Host "lldb-dap exit: $LASTEXITCODE"
 
       - name: Add lldb-dap to PATH (Windows)
         if: runner.os == 'Windows'
