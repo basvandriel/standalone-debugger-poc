@@ -91,11 +91,19 @@ jobs:
           $rel = Invoke-RestMethod `
             "https://api.github.com/repos/vadimcn/codelldb/releases/latest" `
             -Headers @{ Authorization = "Bearer ${{ github.token }}" }
-          $asset = $rel.assets | Where-Object name -eq "codelldb-x86_64-windows.vsix"
+          Write-Host "CodeLLDB $($rel.tag_name) assets:"
+          $rel.assets | ForEach-Object { Write-Host "  $($_.name)" }
+
+          # Asset naming has varied across CodeLLDB releases; try common patterns.
+          $asset = $rel.assets | Where-Object { $_.name -eq "codelldb-x86_64-windows.vsix" }
+          if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like "codelldb-win32-x64*.vsix" } | Select-Object -First 1 }
+          if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like "*windows*.vsix" } | Select-Object -First 1 }
+          if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like "*win32*.vsix" } | Select-Object -First 1 }
           if (-not $asset) {
-            $asset = $rel.assets | Where-Object name -like "*windows*.vsix" | Select-Object -First 1
+            Write-Error "Could not find a Windows VSIX in CodeLLDB $($rel.tag_name). See asset list above."
+            exit 1
           }
-          Write-Host "Downloading CodeLLDB $($rel.tag_name): $($asset.browser_download_url)"
+          Write-Host "Downloading: $($asset.name)"
           Invoke-WebRequest $asset.browser_download_url -OutFile "$env:TEMP\codelldb.vsix" -UseBasicParsing
           New-Item -ItemType Directory -Force -Path "C:\codelldb" | Out-Null
           Expand-Archive "$env:TEMP\codelldb.vsix" -DestinationPath "C:\codelldb"
