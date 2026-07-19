@@ -115,11 +115,22 @@ async function main(): Promise<void> {
     await startPromise;
 
     await session.toggleBreakpoint(SOURCE, BREAKPOINT_LINE);
-    const afterBp = session.getSnapshot();
-    const bp = afterBp.breakpoints[SOURCE]?.[0];
-    assert.ok(bp, "expected a breakpoint descriptor after toggleBreakpoint");
+    // On Linux, lldb-dap can attach so quickly that debug symbols aren't fully
+    // loaded when setBreakpoints is sent -- the response comes back verified:false
+    // and a follow-up `breakpoint` event fires with verified:true once symbols
+    // load. Poll until the snapshot reflects that rather than asserting immediately.
+    const bp = await new Promise<NonNullable<SessionSnapshot["breakpoints"][string]>[number]>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("timed out waiting for breakpoint to be verified")), 10_000);
+      const check = () => {
+        const snap = session.getSnapshot();
+        const b = snap.breakpoints[SOURCE]?.[0];
+        if (b?.verified) { clearTimeout(timer); resolve(b); }
+      };
+      check();
+      const unsub = session.onSnapshot(() => check());
+      setTimeout(() => unsub, 10_000);
+    });
     assert.equal(bp.line, BREAKPOINT_LINE);
-    assert.equal(bp.verified, true, "expected breakpoint to be verified on the attached process");
     console.log("[attach-smoke] breakpoint set and verified:", bp);
 
     await session.beginExecution();
