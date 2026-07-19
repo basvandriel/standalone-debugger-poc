@@ -1,29 +1,47 @@
 import { execFile } from 'node:child_process';
+import { access } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import type { AdapterDefinition } from './types.js';
 
 const execFileAsync = promisify(execFile);
 
-const FALLBACK_PATH = '/Library/Developer/CommandLineTools/usr/bin/lldb-dap';
+const MACOS_FALLBACK = '/Library/Developer/CommandLineTools/usr/bin/lldb-dap';
+const LINUX_CANDIDATES = ['/usr/bin/lldb-dap', '/usr/local/bin/lldb-dap'];
 
 let cachedExecutablePath: string | undefined;
 
 async function resolveExecutable(): Promise<string> {
   if (cachedExecutablePath) return cachedExecutablePath;
 
-  try {
-    const { stdout } = await execFileAsync('xcrun', ['-f', 'lldb-dap']);
-    const resolved = stdout.trim();
-    if (resolved) {
-      cachedExecutablePath = resolved;
-      return resolved;
+  if (process.platform === 'darwin') {
+    try {
+      const { stdout } = await execFileAsync('xcrun', ['-f', 'lldb-dap']);
+      const resolved = stdout.trim();
+      if (resolved) {
+        cachedExecutablePath = resolved;
+        return resolved;
+      }
+    } catch {
+      // fall through to known CommandLineTools path
     }
-  } catch {
-    // fall through to the known CommandLineTools path
+    cachedExecutablePath = MACOS_FALLBACK;
+    return MACOS_FALLBACK;
   }
 
-  cachedExecutablePath = FALLBACK_PATH;
-  return FALLBACK_PATH;
+  // Linux: check known install locations in order
+  for (const candidate of LINUX_CANDIDATES) {
+    try {
+      await access(candidate);
+      cachedExecutablePath = candidate;
+      return candidate;
+    } catch {
+      // try next
+    }
+  }
+
+  // Last resort: hope it's on PATH
+  cachedExecutablePath = 'lldb-dap';
+  return 'lldb-dap';
 }
 
 export const lldbDapAdapter: AdapterDefinition = {
