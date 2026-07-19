@@ -77,12 +77,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\Program Files\LLVM
-          key: windows-llvm-20-v1
+          key: windows-llvm-20-v2
 
       - name: Install LLVM (Windows)
         if: runner.os == 'Windows' && steps.cache-lldb-win.outputs.cache-hit != 'true'
         shell: pwsh
-        run: choco install llvm --version=20.1.8 --yes --no-progress
+        run: |
+          # The runner image ships with a VS-subset LLVM that lacks liblldb.dll.
+          # --force overwrites it with the full standalone LLVM installer from choco.
+          choco install llvm --version=20.1.8 --yes --no-progress --force
 
       - name: Add lldb-dap to PATH (Windows)
         if: runner.os == 'Windows'
