@@ -71,6 +71,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Allow ptrace for attach smoke test (Linux)
+        if: runner.os == 'Linux'
+        run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
       - name: Engine smoke tests
         run: |
           npm run smoke
