@@ -216,10 +216,9 @@ async function main(): Promise<void> {
     "terminated event",
     15_000,
   );
-  await withTimeout(
-    client.sendRequest("continue", { threadId }),
-    "continue response",
-  );
+  // Fire-and-forget: codelldb may close the pipe before acking continue when
+  // the process exits immediately, so don't block on the response.
+  void client.sendRequest("continue", { threadId }).catch(() => {});
 
   await terminatedPromise;
   console.log("[smoke] program terminated");

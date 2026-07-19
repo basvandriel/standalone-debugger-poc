@@ -134,8 +134,9 @@ async function main(): Promise<void> {
   );
   assert.equal(stopped.stack[0]?.line, BREAKPOINT_LINE);
 
-  const localsScope = stopped.scopes.find((s) => s.name === "Locals");
-  assert.ok(localsScope, "expected a Locals scope");
+  // lldb-dap names this "Locals"; codelldb names it "Local".
+  const localsScope = stopped.scopes.find((s) => s.name === "Locals" || s.name === "Local");
+  assert.ok(localsScope, "expected a Locals/Local scope");
   const localVars =
     stopped.variablesByRef[localsScope.variablesReference] ?? [];
   const byName = Object.fromEntries(localVars.map((v) => [v.name, v.value]));
@@ -169,7 +170,7 @@ async function main(): Promise<void> {
   );
   await session.stepOver();
   const afterStep = await stepPromise;
-  const localsScope2 = afterStep.scopes.find((s) => s.name === "Locals");
+  const localsScope2 = afterStep.scopes.find((s) => s.name === "Locals" || s.name === "Local");
   const localVars2 =
     afterStep.variablesByRef[localsScope2!.variablesReference] ?? [];
   const byName2 = Object.fromEntries(localVars2.map((v) => [v.name, v.value]));

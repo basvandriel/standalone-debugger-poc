@@ -106,8 +106,9 @@ async function main(): Promise<void> {
       `expected top frame to be report::summarize, got "${stopped.stack[0]?.name}"`,
     );
 
-    const localsScope = stopped.scopes.find((s) => s.name === "Locals");
-    assert.ok(localsScope, "expected a Locals scope");
+    // lldb-dap names this "Locals"; codelldb names it "Local".
+    const localsScope = stopped.scopes.find((s) => s.name === "Locals" || s.name === "Local");
+    assert.ok(localsScope, "expected a Locals/Local scope");
     const localVars = stopped.variablesByRef[localsScope.variablesReference] ?? [];
     const byName = Object.fromEntries(localVars.map((v) => [v.name, v.value]));
     console.log("[multi-file-smoke] locals in report::summarize:", byName);
