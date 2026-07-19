@@ -18,6 +18,38 @@
   than being an oversight — see [KEYBINDINGS.md](KEYBINDINGS.md) for the
   full keyboard-only interaction model.
 
+## Windows: Rust debugging crashes LLDB (C/C++ works)
+
+**Rust debugging on Windows does not work with the standard LLVM installer.**
+
+`lldb-dap` from the official LLVM Windows package (via `choco install llvm`,
+`winget install LLVM.LLVM`, or the GitHub releases installer) crashes with
+`0xC0000409` (Windows security kill: stack buffer overrun detected by the
+`/GS` stack-cookie guard) when it tries to read Rust PDB debug symbols during
+a live session — specifically during the `scopes`/`variables` DAP requests
+that enumerate local variables after a breakpoint hits.
+
+C and C++ debugging on Windows works correctly with the same binary.
+
+**Root cause:** LLDB's Windows PDB reader was primarily built and tested for
+C/C++. Rust on Windows (MSVC target) produces PDB files, but with far more
+complex type encodings than C — generic monomorphizations, iterator internals,
+Rust-specific integer types, etc. LLDB's PDB parsing code has a stack buffer
+overrun bug that is triggered by these Rust-specific type records.
+
+**CI workaround:** the Windows CI job runs `smoke` and `smoke:session` against
+the C fixture (`c-loop`) to verify the DAP handshake, adapter resolver, `.exe`
+path handling, and end-to-end launch/breakpoint/continue flow on Windows.
+`smoke:multifile` and `smoke:attach` are not run on Windows (no C equivalents).
+
+**For real Windows users:** Rust debugging via `lldb-dap` on Windows requires a
+custom-built LLDB with a patched PDB reader and Rust NatVis support. The
+[CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
+VS Code extension bundles exactly such a build and does support Rust debugging
+on Windows. If Windows Rust debugging becomes a priority, the most practical
+path is to bundle a known-good `lldb-dap` binary (the same one CodeLLDB ships)
+rather than relying on the user's system LLVM.
+
 ## Attach (`dbg attach`) limitations
 
 - **Very early breakpoints can race the attach.** Attach happens *after* the
