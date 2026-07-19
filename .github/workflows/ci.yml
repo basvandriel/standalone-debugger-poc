@@ -94,7 +94,7 @@ jobs:
             -Recurse -Filter "python3*.dll" -ErrorAction SilentlyContinue |
             ForEach-Object { Copy-Item $_.FullName "$bin\" -Force }
 
-      - name: Verify lldb-dap (Windows)
+      - name: Add lldb-dap to PATH (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -104,13 +104,9 @@ jobs:
             exit 1
           }
           echo "$bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          # Smoke tests (launch + breakpoints + continue) crash LLDB on Windows
-          # with 0xC0000409 (stack buffer overrun in LLDB's Rust DWARF parser).
-          # The adapter resolver, DLL setup, and DAP handshake are verified by
-          # --help exit 0; full smoke tests run on macOS and Linux.
           & "$bin\lldb-dap.exe" --help
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Write-Host "lldb-dap starts on Windows — adapter resolver verified"
+          Write-Host "lldb-dap ready at $bin"
 
       - name: Allow ptrace for attach smoke test (Linux)
         if: runner.os == 'Linux'
@@ -123,6 +119,17 @@ jobs:
           npm run smoke:session
           npm run smoke:multifile
           npm run smoke:attach
+
+      - name: Engine smoke tests (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # smoke and smoke:session use the C fixture on Windows — LLDB 20 crashes
+          # with 0xC0000409 (stack buffer overrun in its Rust PDB reader) but handles
+          # C COFF/PDB symbols correctly. Variable names and expected output are the same.
+          # smoke:multifile and smoke:attach have no C equivalents; skipped on Windows.
+          npm run smoke
+          npm run smoke:session
 
       - name: Check for orphaned lldb-dap processes (Unix)
         if: always() && runner.os != 'Windows'
