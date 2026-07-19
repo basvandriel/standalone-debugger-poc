@@ -71,21 +71,38 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Set up Python (Windows — lldb-dap links against python3xx.dll)
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Cache LLVM installation (Windows)
         if: runner.os == 'Windows'
         id: cache-lldb-win
         uses: actions/cache@v4
         with:
           path: C:\Program Files\LLVM
-          key: windows-llvm-20-v2
+          key: windows-llvm-20-v3
 
       - name: Install LLVM (Windows)
         if: runner.os == 'Windows' && steps.cache-lldb-win.outputs.cache-hit != 'true'
         shell: pwsh
+        run: choco install llvm --version=20.1.8 --yes --no-progress --force
+
+      - name: Diagnose lldb-dap (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          # The runner image ships with a VS-subset LLVM that lacks liblldb.dll.
-          # --force overwrites it with the full standalone LLVM installer from choco.
-          choco install llvm --version=20.1.8 --yes --no-progress --force
+          $bin = "C:\Program Files\LLVM\bin"
+          Write-Host "=== DLLs in LLVM\bin ==="
+          Get-ChildItem $bin -Filter "*.dll" | Select-Object -ExpandProperty Name | Sort-Object
+          Write-Host "=== liblldb.dll present: $(Test-Path "$bin\liblldb.dll") ==="
+          Write-Host "=== Python on PATH ==="
+          python --version
+          Write-Host "=== Try running lldb-dap --help ==="
+          $p = Start-Process -FilePath "$bin\lldb-dap.exe" -ArgumentList "--help" -Wait -PassThru -NoNewWindow -ErrorAction SilentlyContinue
+          Write-Host "Exit code: $($p.ExitCode)"
 
       - name: Add lldb-dap to PATH (Windows)
         if: runner.os == 'Windows'
