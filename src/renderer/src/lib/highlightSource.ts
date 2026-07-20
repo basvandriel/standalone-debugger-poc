@@ -7,6 +7,7 @@ import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import rust from "@shikijs/langs/rust";
 import c from "@shikijs/langs/c";
 import cpp from "@shikijs/langs/cpp";
+import python from "@shikijs/langs/python";
 
 const CSS_VARIABLES_THEME = createCssVariablesTheme({
   name: "css-variables",
@@ -27,6 +28,7 @@ const EXTENSION_TO_LANG: Record<string, string> = {
   cxx: "cpp",
   h: "c",
   hpp: "cpp",
+  py: "python",
 };
 
 function languageForPath(path: string): string | undefined {
@@ -39,7 +41,7 @@ let highlighterPromise: Promise<HighlighterCore> | undefined;
 function getHighlighter(): Promise<HighlighterCore> {
   highlighterPromise ??= createHighlighterCore({
     themes: [CSS_VARIABLES_THEME],
-    langs: [rust, c, cpp],
+    langs: [rust, c, cpp, python],
     // WASM-free: avoids depending on WASM asset loading working correctly
     // inside Electron's sandboxed renderer, at a negligible accuracy cost
     // for highlighting a single small file.

@@ -3,6 +3,7 @@ import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import rust from "@shikijs/langs/rust";
 import c from "@shikijs/langs/c";
 import cpp from "@shikijs/langs/cpp";
+import python from "@shikijs/langs/python";
 import darkPlus from "@shikijs/themes/dark-plus";
 
 export interface HighlightToken {
@@ -22,6 +23,7 @@ const EXTENSION_TO_LANG: Record<string, string> = {
   cxx: "cpp",
   h: "c",
   hpp: "cpp",
+  py: "python",
 };
 
 function languageForPath(path: string): string | undefined {
@@ -34,7 +36,7 @@ let highlighterPromise: Promise<HighlighterCore> | undefined;
 function getHighlighter(): Promise<HighlighterCore> {
   highlighterPromise ??= createHighlighterCore({
     themes: [darkPlus],
-    langs: [rust, c, cpp],
+    langs: [rust, c, cpp, python],
     engine: createJavaScriptRegexEngine(),
   });
   return highlighterPromise;
