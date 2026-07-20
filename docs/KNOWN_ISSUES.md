@@ -18,6 +18,46 @@
   than being an oversight — see [KEYBINDINGS.md](KEYBINDINGS.md) for the
   full keyboard-only interaction model.
 
+## Windows: Rust debugging requires CodeLLDB (standard LLVM crashes)
+
+**Standard LLVM `lldb-dap` crashes on Rust PDB debug symbols.** Use CodeLLDB
+instead (see below).
+
+`lldb-dap` from the official LLVM Windows package crashes with `0xC0000409`
+(Windows `/GS` security kill: stack buffer overrun) when reading Rust PDB debug
+symbols — specifically during the `scopes`/`variables` DAP requests after a
+breakpoint hits. C and C++ work fine.
+
+**Root cause:** LLDB's PDB reader was built for C/C++. Rust on the MSVC target
+produces PDB files with far more complex type encodings (generic
+monomorphizations, iterator internals, etc.) that trigger a stack buffer overrun
+in LLDB's PDB parsing code.
+
+**Fix: use CodeLLDB's bundled LLDB.** The adapter resolver on Windows
+(`src/engine/adapters/lldbDap.ts`) automatically prefers `codelldb.exe` over
+`lldb-dap.exe` because CodeLLDB ships a patched LLDB build with a working Rust
+PDB reader and Rust NatVis formatters. It checks (in order):
+
+1. `C:\codelldb\extension\adapter\codelldb.exe` — the CI/bundled download path
+2. `%USERPROFILE%\.vscode\extensions\vadimcn.vscode-lldb-*\extension\adapter\codelldb.exe` — the [CodeLLDB VS Code extension](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) auto-detected from your extensions directory
+3. `codelldb` on PATH
+4. Falls back to `lldb-dap` (C/C++ only)
+
+**To get full Rust debugging on Windows:** install the [CodeLLDB VS Code
+extension](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
+(recommended — it also gives you Rust debugging in VS Code) or download the
+`codelldb-x86_64-windows.vsix` asset from the [CodeLLDB GitHub releases](https://github.com/vadimcn/codelldb/releases)
+and extract it to `C:\codelldb\`.
+
+**CI:** downloads the latest CodeLLDB Windows VSIX and runs the full Rust smoke
+suite (`smoke`, `smoke:session`, `smoke:multifile`).
+
+**Limitation — program stdout not captured on Windows:** When codelldb runs in
+stdio DAP mode (no VS Code terminal), it does not redirect the debuggee's stdout
+to DAP `output` events. Program output is lost. Breakpoints, variables, watches,
+and stepping all work correctly; only live stdout display is absent. This is a
+codelldb architecture issue specific to headless/stdio operation.
+
 ## Attach (`dbg attach`) limitations
 
 - **Very early breakpoints can race the attach.** Attach happens *after* the

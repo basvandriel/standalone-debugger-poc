@@ -10,7 +10,7 @@ jobs:
   engine:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -24,32 +24,28 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache lldb-dap binary
+      - name: Cache LLVM installation (Linux)
         if: runner.os == 'Linux'
         id: cache-lldb
         uses: actions/cache@v4
         with:
-          path: ~/.cache/lldb-dap
-          key: ${{ runner.os }}-lldb-dap-v1
+          path: /usr/lib/llvm-*
+          key: ${{ runner.os }}-llvm-lldb-v1
 
-      - name: Install lldb-dap (Linux)
+      - name: Install lldb (Linux)
+        if: runner.os == 'Linux' && steps.cache-lldb.outputs.cache-hit != 'true'
+        run: sudo apt-get install -y --no-install-recommends lldb
+
+      - name: Set up lldb-dap symlink (Linux)
         if: runner.os == 'Linux'
         run: |
-          if [ -f "$HOME/.cache/lldb-dap/lldb-dap" ]; then
-            echo "Restoring lldb-dap from cache"
-            sudo cp "$HOME/.cache/lldb-dap/lldb-dap" /usr/local/bin/lldb-dap
-            sudo chmod +x /usr/local/bin/lldb-dap
-          else
-            sudo apt-get install -y --no-install-recommends lldb
-            LLDB_DAP=$(find /usr -name 'lldb-dap*' -type f 2>/dev/null | head -1)
-            if [ -z "$LLDB_DAP" ]; then
-              echo "ERROR: lldb-dap binary not found after installing lldb"
-              exit 1
-            fi
-            sudo ln -sf "$LLDB_DAP" /usr/local/bin/lldb-dap
-            mkdir -p "$HOME/.cache/lldb-dap"
-            cp "$LLDB_DAP" "$HOME/.cache/lldb-dap/lldb-dap"
+          LLDB_DAP=$(find /usr/lib/llvm-* -name 'lldb-dap' -type f 2>/dev/null | head -1)
+          if [ -z "$LLDB_DAP" ]; then
+            echo "ERROR: lldb-dap not found in /usr/lib/llvm-*"
+            exit 1
           fi
+          sudo ln -sf "$LLDB_DAP" /usr/local/bin/lldb-dap
+          sudo ldconfig
           lldb-dap --version
 
       - name: Cache Rust build artifacts
@@ -75,19 +71,81 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Cache codelldb (Windows)
+        if: runner.os == 'Windows'
+        id: cache-codelldb
+        uses: actions/cache@v4
+        with:
+          path: C:\codelldb
+          # Bump vN when a new CodeLLDB release is needed (e.g. LLDB version bump)
+          key: windows-codelldb-v1
+
+      - name: Download codelldb (Windows)
+        if: runner.os == 'Windows' && steps.cache-codelldb.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          # CodeLLDB ships a patched LLDB that handles Rust PDB symbols without
+          # crashing. The VSIX is a ZIP; we extract it in-place and run the adapter
+          # from extension/adapter/codelldb.exe which auto-discovers its liblldb.dll
+          # at the relative path ../lldb/bin/liblldb.dll.
+          $rel = Invoke-RestMethod `
+            "https://api.github.com/repos/vadimcn/codelldb/releases/latest" `
+            -Headers @{ Authorization = "Bearer ${{ github.token }}" }
+          Write-Host "CodeLLDB $($rel.tag_name) assets:"
+          $rel.assets | ForEach-Object { Write-Host "  $($_.name)" }
+
+          # Asset naming has varied across CodeLLDB releases; try common patterns.
+          $asset = $rel.assets | Where-Object { $_.name -eq "codelldb-x86_64-windows.vsix" }
+          if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like "codelldb-win32-x64*.vsix" } | Select-Object -First 1 }
+          if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like "*windows*.vsix" } | Select-Object -First 1 }
+          if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like "*win32*.vsix" } | Select-Object -First 1 }
+          if (-not $asset) {
+            Write-Error "Could not find a Windows VSIX in CodeLLDB $($rel.tag_name). See asset list above."
+            exit 1
+          }
+          Write-Host "Downloading: $($asset.name)"
+          Invoke-WebRequest $asset.browser_download_url -OutFile "$env:TEMP\codelldb.vsix" -UseBasicParsing
+          New-Item -ItemType Directory -Force -Path "C:\codelldb" | Out-Null
+          Expand-Archive "$env:TEMP\codelldb.vsix" -DestinationPath "C:\codelldb"
+          Write-Host "codelldb adapter: $(Get-Item 'C:\codelldb\extension\adapter\codelldb.exe' | Select-Object -Expand FullName)"
+          Write-Host "LLDB bin contents:"
+          Get-ChildItem "C:\codelldb\extension\lldb\bin" | Select-Object -First 15 Name
+
+      - name: Verify codelldb (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $adapter = "C:\codelldb\extension\adapter\codelldb.exe"
+          if (-not (Test-Path $adapter)) {
+            Write-Error "codelldb.exe not found at $adapter"
+            exit 1
+          }
+          Write-Host "codelldb adapter: $adapter ($((Get-Item $adapter).Length) bytes)"
+
       - name: Allow ptrace for attach smoke test (Linux)
         if: runner.os == 'Linux'
         run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
       - name: Engine smoke tests
+        if: runner.os != 'Windows'
         run: |
           npm run smoke
           npm run smoke:session
           npm run smoke:multifile
           npm run smoke:attach
 
-      - name: Check for orphaned lldb-dap processes
-        if: always()
+      - name: Engine smoke tests (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # codelldb (CodeLLDB's patched LLDB) handles Rust PDB debug symbols
+          # correctly, so the full Rust fixture suite runs on Windows.
+          npm run smoke
+          npm run smoke:session
+          npm run smoke:multifile
+
+      - name: Check for orphaned lldb-dap processes (Unix)
+        if: always() && runner.os != 'Windows'
         run: |
           if ps aux | grep -v grep | grep -q lldb-dap; then
             echo "FAIL: orphaned lldb-dap processes found after smoke tests"
@@ -96,6 +154,19 @@ jobs:
           else
             echo "OK: no orphaned lldb-dap processes"
           fi
+
+      - name: Check for orphaned adapter processes (Windows)
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $procs = @(Get-Process -Name codelldb, lldb-dap -ErrorAction SilentlyContinue)
+          if ($procs) {
+            Write-Error "FAIL: orphaned adapter processes found after smoke tests"
+            $procs | Format-Table
+            exit 1
+          } else {
+            Write-Host "OK: no orphaned codelldb/lldb-dap processes"
+          }
 
   # TUI smoke tests: real Ink rendering + keybinding handlers via ink-testing-library.
   # macOS only — ink-testing-library's fake stdin has unreliable input delivery
