@@ -45,7 +45,7 @@ jobs:
             DIST_TAG="latest"
           else
             SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-            VERSION="$YEAR.$MONTH.$PATCH-rc.$SHA"
+            VERSION="$YEAR.$MONTH.$PATCH-rc.sha$SHA"
             DIST_TAG="next"
           fi
 
