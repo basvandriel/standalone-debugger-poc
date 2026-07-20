@@ -46,31 +46,27 @@ Sleep 1500ms
 
 # Expand the LOCALS scope to reveal variable values
 Type "l"
-Sleep 800ms
+Sleep 1000ms
 
-# Browse down through the locals (i, doubled, total)
-Type "j"
-Sleep 400ms
-Type "j"
-Sleep 400ms
+# Move cursor to the 'total' variable (first item under LOCALS)
 Type "j"
 Sleep 600ms
 
-# Tab back to source (variables → watch → console → source)
+# Step over while staying on the variables panel — total updates 0 → 2
+Type "n"
+Sleep 2800ms
+
+# Step again — move past println to next loop iteration
+Type "n"
+Sleep 2000ms
+
+# Tab back to source
 Tab
-Sleep 200ms
+Sleep 300ms
 Tab
-Sleep 200ms
+Sleep 300ms
 Tab
 Sleep 500ms
-
-# Step over — execution advances one line, variable values update
-Type "n"
-Sleep 2200ms
-
-# Step again — see total accumulate
-Type "n"
-Sleep 2200ms
 
 # Clear the breakpoint and run to completion
 Type "b"

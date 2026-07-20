@@ -40,18 +40,20 @@ export function computeLayoutBudget(
   const sourceContentRows = Math.max(MIN_CONTENT_ROWS, mainRows - PANEL_CHROME_ROWS);
 
   const sidePanels: Array<'stack' | 'variables' | 'watch'> = ['stack', 'variables', 'watch'];
-  const expandedCount = sidePanels.filter((p) => !collapsedPanels.has(p)).length;
+  // Variables gets 2× the weight of stack and watch — it's the primary inspection panel.
+  const PANEL_WEIGHTS: Record<'stack' | 'variables' | 'watch', number> = { stack: 1, variables: 2, watch: 1 };
   // A collapsed panel still renders its border + title row, just no content.
   const collapsedRows = sidePanels.filter((p) => collapsedPanels.has(p)).length * PANEL_CHROME_ROWS;
   const availableForExpanded = Math.max(0, mainRows - collapsedRows);
-  const perExpandedTotal = expandedCount > 0 ? Math.floor(availableForExpanded / expandedCount) : 0;
+  const totalWeight = sidePanels.reduce((s, p) => (collapsedPanels.has(p) ? s : s + PANEL_WEIGHTS[p]), 0);
 
   const sideColumns = {} as Record<'stack' | 'variables' | 'watch', number>;
   for (const panel of sidePanels) {
     if (collapsedPanels.has(panel)) {
       sideColumns[panel] = 0;
     } else {
-      sideColumns[panel] = Math.max(MIN_CONTENT_ROWS, perExpandedTotal - PANEL_CHROME_ROWS);
+      const allotted = totalWeight > 0 ? Math.floor(availableForExpanded * PANEL_WEIGHTS[panel] / totalWeight) : 0;
+      sideColumns[panel] = Math.max(MIN_CONTENT_ROWS, allotted - PANEL_CHROME_ROWS);
     }
   }
 
