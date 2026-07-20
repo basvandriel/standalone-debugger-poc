@@ -86,7 +86,11 @@
       "Bash(git cherry-pick *)",
       "Bash(git checkout *)",
       "Bash(git branch *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(node -e \"const s = require\\('semver'\\); console.log\\(s.valid\\('2026.7.2-rc.abc1234'\\)\\); console.log\\(s.valid\\('2026.7.2-rc.0000000'\\)\\);\")",
+      "Bash(node -e \"const s = require\\('semver'\\); console.log\\(s.valid\\('2026.7.2-rc.sha1234567'\\)\\);\")",
+      "Bash(node -e \"const s = require\\('semver'\\); const v = '2026.7.2-rc.sha3f9a1c2'; console.log\\('valid:', s.valid\\(v\\)\\); console.log\\('prerelease:', s.prerelease\\(v\\)\\);\")"
     ],
     "additionalDirectories": [
       "/private/tmp",
