@@ -22,7 +22,9 @@
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,340\\)\" -frames:v 1 /tmp/v340.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,270\\)\" -frames:v 1 /tmp/vfix270.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,310\\)\" -frames:v 1 /tmp/vfix310.png -y)",
-      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,350\\)\" -frames:v 1 /tmp/vfix350.png -y)"
+      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,350\\)\" -frames:v 1 /tmp/vfix350.png -y)",
+      "Bash(GIT_SEQUENCE_EDITOR='sed -i \"\" \"s/^pick 9d49af0/edit 9d49af0/\"' git rebase -i b310c2d)",
+      "Bash(git stash *)"
     ]
   }
 }
