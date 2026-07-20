@@ -63,6 +63,15 @@ export function useTuiKeybindings(
         void session.restart();
       return;
     }
+    if (input === TUI_KEYS.restart) {
+      if (snapshot.phase === "terminated" || snapshot.phase === "error" || snapshot.phase === "stopped")
+        void session.restart();
+      return;
+    }
+    if (input === TUI_KEYS.autoRestart) {
+      ui.toggleAutoRestart();
+      return;
+    }
     if (input === TUI_KEYS.stop) {
       void session.terminate().finally(() => exit());
       return;

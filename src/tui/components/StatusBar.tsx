@@ -20,6 +20,7 @@ const HINTS: Record<FocusedPanel, string> = {
   watch: `${K.moveDown}/${K.moveUp} move  ${K.removeWatch} remove  ${K.switchFile} files  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`,
   console: `${K.switchTab} switch tab  ${K.switchFile} files  ${K.stop} quit  ${K.commandBar} cmd  ${K.fold} fold`
 };
+const HINTS_ENDED = `${K.restart} restart  ${K.autoRestart} toggle auto-restart  ${K.stop} quit`;
 
 const PHASE_LABEL: Record<SessionPhase, string> = {
   idle: 'idle',
@@ -56,6 +57,7 @@ const PHASE_BADGE_BG: Record<SessionPhase, string> = {
 
 export function StatusBar({ snapshot }: StatusBarProps) {
   const focusedPanel = useUiStore((s) => s.focusedPanel);
+  const autoRestart = useUiStore((s) => s.autoRestart);
   const currentFrame = snapshot.stack.find((f) => f.id === snapshot.selectedFrameId);
   const currentThread = snapshot.threads.find((t) => t.id === snapshot.selectedThreadId);
 
@@ -105,9 +107,16 @@ export function StatusBar({ snapshot }: StatusBarProps) {
           </Box>
         )}
       </Box>
-      <Text color={COLORS.fgDim} wrap="truncate-end">
-        {HINTS[focusedPanel]}
-      </Text>
+      <Box gap={2}>
+        {autoRestart && (
+          <Text color={COLORS.accent} bold>AUTO-RESTART</Text>
+        )}
+        <Text color={COLORS.fgDim} wrap="truncate-end">
+          {snapshot.phase === 'terminated' || snapshot.phase === 'error'
+            ? HINTS_ENDED
+            : HINTS[focusedPanel]}
+        </Text>
+      </Box>
     </Box>
   );
 }

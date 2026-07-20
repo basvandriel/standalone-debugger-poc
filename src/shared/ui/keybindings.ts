@@ -29,6 +29,8 @@ export const ELECTRON_KEYS = {
 
 export const TUI_KEYS = {
   startContinue: 'c',
+  restart: 'r',
+  autoRestart: 'R',
   stop: 'q',
   toggleBreakpoint: 'b',
   stepOver: 'n',

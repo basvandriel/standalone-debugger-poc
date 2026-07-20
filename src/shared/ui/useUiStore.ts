@@ -53,6 +53,9 @@ interface UiStore {
 
   collapsedPanels: Set<FocusedPanel>;
   toggleCollapsed: (panel: FocusedPanel) => void;
+
+  autoRestart: boolean;
+  toggleAutoRestart: () => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -120,5 +123,8 @@ export const useUiStore = create<UiStore>((set) => ({
       if (next.has(panel)) next.delete(panel);
       else next.add(panel);
       return { collapsedPanels: next };
-    })
+    }),
+
+  autoRestart: false,
+  toggleAutoRestart: () => set((state) => ({ autoRestart: !state.autoRestart })),
 }));

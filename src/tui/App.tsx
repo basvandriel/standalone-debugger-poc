@@ -122,6 +122,15 @@ export function App({ session }: AppProps) {
     }
   }, [snapshot?.phase, snapshot?.stack, resetVariableExpansion, setActiveSourcePath]);
 
+  // Auto-restart: when enabled and the session exits, restart immediately.
+  useEffect(() => {
+    if (!snapshot) return;
+    if (snapshot.phase !== 'terminated' && snapshot.phase !== 'error') return;
+    if (!useUiStore.getState().autoRestart) return;
+    const t = setTimeout(() => void session.restart(), 300);
+    return () => clearTimeout(t);
+  }, [snapshot?.phase, session]);
+
   useTuiKeybindings(session, snapshot, exit);
 
   if (!snapshot) return <Text color={COLORS.fgDim}>loading...</Text>;
