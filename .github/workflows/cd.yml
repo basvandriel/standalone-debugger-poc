@@ -6,7 +6,6 @@ on:
     types: [completed]
     branches:
       - main
-      - 'feature/**'
 
 jobs:
   publish:
@@ -42,27 +41,14 @@ jobs:
             PATCH=0
           fi
 
-          BRANCH="${{ github.event.workflow_run.head_branch }}"
-          SHA=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
-
-          if [ "$BRANCH" = "main" ]; then
-            VERSION="$YEAR.$MONTH.$PATCH"
-            DIST_TAG="latest"
-          else
-            VERSION="$YEAR.$MONTH.$PATCH-rc.sha$SHA"
-            DIST_TAG="next"
-          fi
-
+          VERSION="$YEAR.$MONTH.$PATCH"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          echo "Publishing $VERSION to @$DIST_TAG"
+          echo "Publishing $VERSION to @latest"
 
       - name: Bump package.json version
         run: npm version ${{ steps.release.outputs.version }} --no-git-tag-version
 
-      - name: Commit and tag (main only)
-        if: steps.release.outputs.branch == 'main'
+      - name: Commit and tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -75,6 +61,6 @@ jobs:
         run: npm ci
 
       - name: Publish to npm
-        run: npm publish --access=public --provenance --tag ${{ steps.release.outputs.dist_tag }}
+        run: npm publish --access=public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
