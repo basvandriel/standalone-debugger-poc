@@ -6,11 +6,10 @@ import type { CliOptions } from "@shared/types";
 function printUsage(message?: string): void {
   if (message) console.error(`dbg: ${message}\n`);
   console.error(
-    "Usage: dbg <program>                          # run a binary or script\n" +
-      "       dbg attach <name>                      # attach by process name\n" +
-      "       dbg attach --pid <pid>                 # attach by PID\n" +
-      "\n" +
-      "Options: [--source <path>] [--adapter <id>] [--cwd <path>]",
+    "Usage: dbg                     # auto-detect project in current directory\n" +
+      "       dbg <program>           # run a specific binary or script\n" +
+      "       dbg attach <name>       # attach by process name\n" +
+      "       dbg attach --pid <pid>  # attach by PID",
   );
 }
 
@@ -18,10 +17,34 @@ export function parseCliOptions(argv: string[]): CliOptions | undefined {
   const [first, ...rest] = argv;
 
   if (first === "attach") return parseAttachOptions(rest);
-  if (first === "run") return parseRunOptions(rest);     // backwards compat
-  if (first && !first.startsWith("-")) return parseRunOptions(argv); // dbg <program>
+  if (first === "run") return parseRunOptions(rest); // backwards compat
+  return parseRunOptions(argv);                      // dbg, dbg <program>
+}
 
-  printUsage(first ? `unknown option "${first}"` : "missing program");
+// --- auto-discovery ----------------------------------------------------------
+
+function discoverProject(cwd: string): { program: string; adapter: string; source: string } | undefined {
+  // Rust: Cargo.toml present → find binary in target/debug
+  const cargoToml = path.join(cwd, "Cargo.toml");
+  if (fs.existsSync(cargoToml)) {
+    const toml = fs.readFileSync(cargoToml, "utf8");
+    const nameMatch = toml.match(/^\s*name\s*=\s*"([^"]+)"/m);
+    const name = nameMatch?.[1];
+    if (name) {
+      const program = path.join(cwd, "target", "debug", name);
+      const source = path.join(cwd, "src", "main.rs");
+      if (fs.existsSync(program)) return { program, adapter: "lldb-dap", source };
+      console.error(`dbg: found Cargo.toml (${name}) but binary not built yet — run \`cargo build\` first`);
+      return undefined;
+    }
+  }
+
+  // Python: look for common entry points
+  for (const name of ["main.py", "app.py", "__main__.py"]) {
+    const program = path.join(cwd, name);
+    if (fs.existsSync(program)) return { program, adapter: "debugpy", source: program };
+  }
+
   return undefined;
 }
 
@@ -30,21 +53,18 @@ function detectAdapter(program: string): string {
 }
 
 function detectSource(program: string, cwd: string, adapter: string): string | undefined {
-  if (adapter === "debugpy") return program; // the script is its own source
+  if (adapter === "debugpy") return program;
 
-  // Walk up from the program looking for a Cargo.toml → src/main.rs
+  // Walk up from the binary looking for Cargo.toml → src/main.rs
   let dir = path.dirname(program);
   for (let i = 0; i < 5; i++) {
     const candidate = path.join(dir, "src", "main.rs");
-    if (fs.existsSync(path.join(dir, "Cargo.toml")) && fs.existsSync(candidate)) {
-      return candidate;
-    }
+    if (fs.existsSync(path.join(dir, "Cargo.toml")) && fs.existsSync(candidate)) return candidate;
     const parent = path.dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
 
-  // Fall back: src/main.rs or src/main.c or src/main.cpp relative to cwd
   for (const name of ["main.rs", "main.c", "main.cpp"]) {
     const candidate = path.join(cwd, "src", name);
     if (fs.existsSync(candidate)) return candidate;
@@ -52,6 +72,8 @@ function detectSource(program: string, cwd: string, adapter: string): string | u
 
   return undefined;
 }
+
+// --- run ---------------------------------------------------------------------
 
 function parseRunOptions(args: string[]): CliOptions | undefined {
   let values: { adapter?: string; program?: string; source?: string; cwd?: string; logFile?: string };
@@ -74,21 +96,27 @@ function parseRunOptions(args: string[]): CliOptions | undefined {
     return undefined;
   }
 
+  const cwd = values.cwd ? path.resolve(values.cwd) : process.cwd();
   const programRaw = values.program ?? positionals[0];
+
+  // Zero args — auto-discover from cwd
   if (!programRaw) {
-    printUsage("missing program — pass a path to a binary or script");
-    return undefined;
+    const discovered = discoverProject(cwd);
+    if (!discovered) {
+      printUsage("could not auto-detect a project — pass a binary or script path");
+      return undefined;
+    }
+    return { mode: "run", ...discovered, cwd, logFile: values.logFile };
   }
 
-  const cwd = values.cwd ? path.resolve(values.cwd) : process.cwd();
   const program = path.resolve(cwd, programRaw);
   const adapter = values.adapter ?? detectAdapter(program);
-  const source = values.source
-    ? path.resolve(cwd, values.source)
-    : detectSource(program, cwd, adapter);
+  const source = values.source ? path.resolve(cwd, values.source) : detectSource(program, cwd, adapter);
 
   return { mode: "run", adapter, program, source, cwd, logFile: values.logFile };
 }
+
+// --- attach ------------------------------------------------------------------
 
 function parseAttachOptions(args: string[]): CliOptions | undefined {
   let values: { adapter?: string; pid?: string; name?: string; source?: string; cwd?: string; logFile?: string };
@@ -112,7 +140,6 @@ function parseAttachOptions(args: string[]): CliOptions | undefined {
     return undefined;
   }
 
-  // Accept positional as name: `dbg attach ./my-binary`
   const nameRaw = values.name ?? positionals[0];
 
   if (!values.pid && !nameRaw) {

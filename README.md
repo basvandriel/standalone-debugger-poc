@@ -67,12 +67,15 @@ npm install -g @basvandriel/dbg
 ## Usage
 
 ```bash
-dbg ./target/debug/myapp          # Rust / C / C++ — adapter and source auto-detected
-dbg main.py                        # Python — adapter and source auto-detected
+dbg                                # auto-detect project in current directory
+dbg ./target/debug/myapp          # explicit binary
+dbg main.py                        # explicit script
 
 dbg attach ./target/debug/myapp   # wait for a named process to appear
 dbg attach --pid 12345            # connect to an already-running PID
 ```
+
+In a Rust project, `dbg` with no arguments reads `Cargo.toml`, finds the binary in `target/debug/`, and opens it. In a Python project it looks for `main.py` / `app.py`. Run `cargo build` first if the binary isn't built yet.
 
 ## Try the demo
 
