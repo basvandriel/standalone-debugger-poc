@@ -51,30 +51,25 @@ export function VariablesPanel({ snapshot, contentHeight }: VariablesPanelProps)
               overflow="hidden"
             >
               {row.isScopeHeader ? (
-                <Text color={COLORS.fgDim} bold wrap="truncate-end">
+                <Text color={COLORS.fgDim} bold>
                   {row.name.toUpperCase()}
                 </Text>
               ) : (
                 <>
-                  <Text color={COLORS.fgDim} wrap="truncate-end">
-                    {row.expandable ? (row.expanded ? '▾ ' : '▸ ') : '  '}
-                  </Text>
-                  <Text color={COLORS.fg} wrap="truncate-end">
-                    {row.name}
-                  </Text>
-                  <Text color={COLORS.fgDim} wrap="truncate-end">
-                    {' = '}
-                  </Text>
-                  <Text color={COLORS.warn} wrap="truncate-end">
-                    {row.value}
-                  </Text>
-                  {row.type && (
-                    <Text color={COLORS.fgDim} wrap="truncate-end">
-                      {' ('}
-                      {row.type}
-                      {')'}
+                  {/* Name part never shrinks — truncation only applies to value/type */}
+                  <Box flexShrink={0}>
+                    <Text color={COLORS.fgDim}>
+                      {row.expandable ? (row.expanded ? '▾ ' : '▸ ') : '  '}
                     </Text>
-                  )}
+                    <Text color={COLORS.fg}>{row.name}</Text>
+                    <Text color={COLORS.fgDim}>{' = '}</Text>
+                  </Box>
+                  <Box flexGrow={1} overflow="hidden">
+                    <Text color={COLORS.warn} wrap="truncate-end">
+                      {row.value}
+                      {row.type ? ` (${row.type})` : ''}
+                    </Text>
+                  </Box>
                 </>
               )}
             </Box>
