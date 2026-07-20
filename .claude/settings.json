@@ -10,7 +10,9 @@
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,120\\)\" -frames:v 1 /tmp/fcheck120.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,320\\)\" -frames:v 1 /tmp/fcheck320.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,100\\)\" -frames:v 1 /tmp/rev100.png -y)",
-      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,280\\)\" -frames:v 1 /tmp/rev280.png -y)"
+      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,280\\)\" -frames:v 1 /tmp/rev280.png -y)",
+      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,100\\)\" -frames:v 1 /tmp/fix100.png -y)",
+      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,280\\)\" -frames:v 1 /tmp/fix280.png -y)"
     ]
   }
 }

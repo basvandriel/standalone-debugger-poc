@@ -35,15 +35,15 @@ export function computeLayoutBudget(
   const commandBarRows = commandBarOpen ? COMMAND_BAR_ROWS : 0;
   const mainRows = Math.max(0, terminalRows - STATUS_BAR_ROWS - CONSOLE_TOTAL_ROWS - commandBarRows);
 
-  const sourceTotalRows = Math.round((mainRows * 3) / 5);
-  const sideTotalRows = mainRows - sourceTotalRows;
-  const sourceContentRows = Math.max(MIN_CONTENT_ROWS, sourceTotalRows - PANEL_CHROME_ROWS);
+  // Source and side panels sit side-by-side (flex row), so both fill mainRows
+  // vertically — the 3:2 flex ratio only governs horizontal width.
+  const sourceContentRows = Math.max(MIN_CONTENT_ROWS, mainRows - PANEL_CHROME_ROWS);
 
   const sidePanels: Array<'stack' | 'variables' | 'watch'> = ['stack', 'variables', 'watch'];
   const expandedCount = sidePanels.filter((p) => !collapsedPanels.has(p)).length;
   // A collapsed panel still renders its border + title row, just no content.
   const collapsedRows = sidePanels.filter((p) => collapsedPanels.has(p)).length * PANEL_CHROME_ROWS;
-  const availableForExpanded = Math.max(0, sideTotalRows - collapsedRows);
+  const availableForExpanded = Math.max(0, mainRows - collapsedRows);
   const perExpandedTotal = expandedCount > 0 ? Math.floor(availableForExpanded / expandedCount) : 0;
 
   const sideColumns = {} as Record<'stack' | 'variables' | 'watch', number>;
