@@ -215,13 +215,12 @@ in `SourcePanel`/`CommandBar`/the keybinding hooks, the panel title) reads
 
 ## Electron frontend (`src/main/`, `src/preload/`, `src/renderer/`)
 
-- **`main/cli.ts`** — parses two subcommands via Node's built-in
-  `util.parseArgs`: `dbg run --adapter ... --program ... --source ...
-  --cwd ...` (launch) and `dbg attach --adapter ... (--pid <n> | --name
-  <path>) --source ... --cwd ...` (attach — exactly one of `--pid`/`--name`
-  required; `--name` is resolved to an absolute path the same way
-  `--program` is, since that's the only `lldb-dap` process-matching
-  behavior this project has verified). Validation failures print usage and
+- **`main/cli.ts`** — parses CLI args via Node's built-in `util.parseArgs`.
+  `dbg` / `dbg <program>` (launch) auto-detects adapter from file extension
+  and discovers source from project structure; `dbg attach <name>` /
+  `dbg attach --pid <n>` (attach) resolves the name to an absolute path,
+  the only `lldb-dap` process-matching behavior this project has verified.
+  Validation failures print usage and
   exit before any `BrowserWindow` is created.
 - **`main/index.ts`** — bootstraps: parses CLI args, creates the
   `BrowserWindow` (`contextIsolation: true`, `nodeIntegration: false`,

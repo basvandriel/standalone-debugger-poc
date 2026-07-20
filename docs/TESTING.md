@@ -123,9 +123,7 @@ macOS by default) works well for this:
 #!/usr/bin/expect -f
 set timeout 15
 cd /path/to/repo
-spawn ./node_modules/.bin/tsx src/tui/index.tsx run --adapter lldb-dap \
-  --program fixtures/loop-demo/target/debug/loop-demo \
-  --source fixtures/loop-demo/src/main.rs
+spawn ./node_modules/.bin/tsx src/tui/index.tsx fixtures/loop-demo/target/debug/loop-demo
 stty rows 30 columns 100 < $spawn_out(slave,name)   # must come AFTER spawn
 expect "READY"
 send "q"

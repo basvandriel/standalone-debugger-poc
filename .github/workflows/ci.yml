@@ -244,11 +244,11 @@ jobs:
 
 # The following from the test plan require a human and cannot run in CI:
 #
-#   Manual: npm run tui:fixture:multi -> press f, jump to report.rs, set
-#   breakpoint, run, verify auto-follow
+#   Manual (multi-file): cd fixtures/multi-file-demo && dbg
+#   -> press f, jump to report.rs, set breakpoint, run, verify auto-follow
 #
-#   Manual: npm run tui:fixture:attach in one terminal, start the binary in
-#   another, verify WATCHING -> READY
+#   Manual (attach): dbg attach fixtures/attach-demo/target/debug/attach-demo
+#   in one terminal, start the binary in another, verify WATCHING -> READY
 #
 # Both flows are covered headlessly by smoke:tui:multifile and smoke:attach
 # respectively — CI catches regressions; the manual passes verify real terminal

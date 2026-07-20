@@ -49,12 +49,10 @@ into sibling modules `ops.rs` and `report.rs`):
 
 ```bash
 # from the repo (after npm run build:fixtures)
-npm run tui:fixture:multi     # or: npm run dev:fixture:multi for Electron
+npm run tui:fixture:multi
 
-# or with the published CLI
-dbg run --adapter lldb-dap \
-  --program fixtures/multi-file-demo/target/debug/multi-file-demo \
-  --source fixtures/multi-file-demo/src/main.rs
+# or with the published CLI, from the fixtures/multi-file-demo directory
+cd fixtures/multi-file-demo && dbg
 ```
 
 Press `f`, type `report`, `Enter` — jumps to `report.rs`, never visited yet.
@@ -70,7 +68,7 @@ via `strings` on the installed binary, since this isn't otherwise
 documented):
 
 ```bash
-dbg attach --adapter lldb-dap --name <path-to-binary>
+dbg attach <path-to-binary>
 ```
 
 dbg opens immediately in a new `waiting` phase ("watching for..." badge,
@@ -82,9 +80,8 @@ window lights up already attached, breakpoints/stepping/continue all work
 exactly as they do after `run`.
 
 - **Trivial variant** for when a PID is already known: `dbg attach --pid 51234`.
-- `--name` is resolved to an absolute path the same way `run`'s `--program`
-  is, since that's the only `lldb-dap` matching behavior this project has
-  verified (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
+- The process name is resolved to an absolute path, since that's the only
+  `lldb-dap` matching behavior this project has verified (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
 - **By-name attach waits with no timeout, by design** — `waitFor` is
   open-ended (bounded by the user going to start their program, not by dbg),
   so `DebugSession.start()` skips its usual 20-second handshake guard for
@@ -113,8 +110,7 @@ counter loop):
 npm run tui:fixture:attach
 
 # or with the published CLI
-dbg attach --adapter lldb-dap \
-  --name fixtures/attach-demo/target/debug/attach-demo
+dbg attach fixtures/attach-demo/target/debug/attach-demo
 ```
 
 Then, from a **second terminal**, start the built binary directly:
