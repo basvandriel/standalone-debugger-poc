@@ -1,7 +1,7 @@
 {
   "name": "@basvandriel/dbg",
-  "version": "2026.7.0",
-  "description": "Debug Adapter Protocol Explorer — standalone, editor-agnostic debugger for the terminal.",
+  "version": "2026.7.1",
+  "description": "Keyboard-first terminal debugger for Rust, C, C++, and Python. Breakpoints, stepping, and variable inspection — no IDE required.",
   "type": "module",
   "main": "./out/main/index.js",
   "bin": {

@@ -1,147 +1,107 @@
+<div align="center">
+
 # dbg
 
-A universal, editor-agnostic debugging frontend built on the [Debug Adapter
-Protocol](https://microsoft.github.io/debug-adapter-protocol/) (DAP), in the
-spirit of [lazygit](https://github.com/jesseduffield/lazygit) and
-[k9s](https://k9scli.io/): dense, keyboard-first panels instead of a
-mouse-driven IDE layout.
+**Standalone, editor-agnostic debugger for the terminal.**  
+Breakpoints · Stepping · Variable inspection · Process attach — without an IDE.
 
-One shared engine (`src/engine/`, `src/shared/`) drives **two** interchangeable
-frontends:
+[![CI](https://github.com/basvandriel/standalone-debugger-poc/actions/workflows/ci.yml/badge.svg)](https://github.com/basvandriel/standalone-debugger-poc/actions/workflows/ci.yml)
+&nbsp;
+![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=node.js&logoColor=white&style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white&style=flat-square)
 
-- **Electron app** — a VS Code-style GUI with F-key bindings, Tailwind CSS,
-  Shiki syntax highlighting.
-- **Terminal UI** — an [Ink](https://github.com/vadimdemedes/ink)-based
-  full-screen TUI with k9s/lazygit-style vim bindings, for when you live in a
-  terminal and don't want to leave it.
+![Rust](https://img.shields.io/badge/Rust-CE422B?logo=rust&logoColor=white&style=flat-square)
+![C / C++](https://img.shields.io/badge/C%20%2F%20C%2B%2B-00599C?logo=cplusplus&logoColor=white&style=flat-square)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white&style=flat-square)
+&nbsp;
+![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white&style=flat-square)
+![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black&style=flat-square)
+![Windows](https://img.shields.io/badge/Windows-0078D4?logo=windows&logoColor=white&style=flat-square)
 
-Both talk to the exact same `DebugSession` engine class, so behavior (the DAP
-handshake, breakpoints, stepping, watches, restart-after-exit, clean shutdown)
-is identical between them — only the rendering and keybindings differ.
+<br>
 
-> **Status: proof of concept.** Only one adapter is wired up: **`lldb-dap`**.
-> `lldb-dap` can debug multiple native languages (Rust, C, C++). See
-> [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for current limitations.
+<img src="demo/demo.gif" width="860" alt="dbg demo — breakpoint, variable inspection, and stepping in the terminal" />
 
-## Quick start
+</div>
 
-Prerequisites: Node.js, Xcode Command Line Tools (for `lldb-dap`), and a Rust
-toolchain (only needed to build the bundled verification fixtures).
+---
+
+Inspired by [lazygit](https://github.com/jesseduffield/lazygit) and [k9s](https://k9scli.io/). Dense, keyboard-first panels. Works over SSH. One DAP engine drives both a TUI and an Electron GUI — zero protocol logic duplicated across frontends.
+
+## Features
+
+| | |
+|---|---|
+| **Breakpoints** | Set and clear per-line across any file, before or during execution |
+| **Stepping** | Step over, into, and out — source panel follows automatically |
+| **Variable inspection** | Expandable tree with live values at every stop |
+| **Watch expressions** | Evaluate arbitrary expressions, refreshed on each stop |
+| **Multi-file follow** | Source panel switches files as the program moves between them |
+| **Fuzzy file switcher** | Jump to any file and set breakpoints ahead of execution (`f`) |
+| **Process attach** | Arm dbg first, start your process anywhere — attaches on appearance |
+| **Restart** | Re-run without losing breakpoints or reconfiguring anything |
+| **Two frontends** | TUI and Electron GUI share the exact same session engine |
+
+## Language support
+
+| Language | Adapter | Notes |
+|---|---|---|
+| Rust | `lldb-dap` | Full NatVis / type formatting; CodeLLDB on Windows |
+| C | `lldb-dap` | |
+| C++ | `lldb-dap` | |
+| Python | `debugpy` | Stdout captured via DAP · `pip install debugpy` required |
+
+## Install
 
 ```bash
+npm install -g @basvandriel/dbg
+```
+
+**Prerequisites:** Node.js 22+, plus the adapter for your language:
+
+| Language | Install |
+|---|---|
+| Rust / C / C++ | Xcode Command Line Tools (macOS) · `lldb` package (Linux) |
+| Python | `pip install debugpy` |
+
+## Debug your own program
+
+```bash
+# Rust / C / C++
+dbg run --program path/to/binary --source path/to/main.rs
+
+# Python
+dbg run --adapter debugpy --program path/to/script.py --source path/to/script.py
+
+# Attach — wait for a named process to appear
+dbg attach --name path/to/binary
+
+# Attach — connect to an already-running PID
+dbg attach --pid 12345
+```
+
+## Try the demo
+
+Clone the repo, build the fixture binaries, and run them against the bundled examples:
+
+```bash
+git clone https://github.com/basvandriel/standalone-debugger-poc
+cd standalone-debugger-poc
 npm install
-npm run build:fixtures
+npm run build:fixtures       # compile the bundled Rust / C / C++ demo programs
 ```
-
-**Terminal UI** (recommended for first try):
 
 ```bash
-npm run tui:fixture
+npm run tui:fixture          # Rust
+npm run tui:fixture:python   # Python
+npm run tui:fixture:multi    # Rust, three source files
+npm run tui:fixture:c        # C
+npm run tui:fixture:cpp      # C++
 ```
 
-**Electron app:**
+## Keybindings
 
-```bash
-npm run dev:fixture
-```
-
-Both launch against `fixtures/loop-demo` — a small Rust program with a loop, a
-`Vec`, and two helper functions, purpose-built to exercise breakpoints, stepping,
-call-stack navigation, and variable expansion.
-
-## Debugging your own program
-
-Point either frontend at any compiled binary:
-
-```bash
-# Terminal UI
-npm run tui -- run --program <path-to-binary> --source <path-to-source-file>
-
-# Electron app
-npm run dev -- run --program <path-to-binary> --source <path-to-source-file>
-```
-
-`--source` defaults to `<cwd>/src/main.rs` if omitted. `--adapter` defaults to
-`lldb-dap`, the only adapter currently implemented.
-
-## Multi-file projects
-
-dbg handles multi-file projects with no config needed.
-
-**The source panel follows execution automatically.** When the program stops at a
-breakpoint in a different file than what's on screen, the panel switches to that
-file on its own — you don't have to navigate there.
-
-**To set a breakpoint in a file you haven't visited yet**, use the fuzzy file
-switcher. At startup, dbg scans the directory tree next to your `--source` file
-and builds a candidate list immediately — all your source files are available to
-jump to before you've run anything.
-
-| Frontend | Open switcher | Navigate | Select |
-|---|---|---|---|
-| TUI | `f` | `j` / `k` or arrow keys | Enter |
-| Electron | `Ctrl+P` / `Cmd+P` | arrow keys | Enter |
-
-**Typical flow for a multi-file project (TUI):**
-
-```
-npm run tui:fixture:multi
-```
-
-1. Press `f`, type `report`, Enter → jumps to `report.rs`
-2. `j`/`k` to the line you want, press `b` → breakpoint set
-3. Press `f`, type `main`, Enter → back to `main.rs`
-4. Press `c` to run → panel auto-follows to `report.rs` when it stops there
-
-## Attaching to a process started elsewhere
-
-Instead of launching the program yourself, you can arm dbg first and then start
-the program however you normally would — from another terminal, VS Code's Run
-button, a shell script, anything.
-
-**Attach by process name** (most common):
-
-```bash
-npm run tui -- attach --name <path-to-binary>
-```
-
-dbg opens immediately showing a `WATCHING` badge and waits. Start your program
-however you like. The moment a matching process appears, dbg attaches — the
-badge flips to `READY`, breakpoints and stepping work exactly as they do after a
-normal `run`.
-
-**Attach by PID** (when the process is already running):
-
-```bash
-npm run tui -- attach --pid <pid>
-```
-
-Both `--name` and `--pid` also work with the Electron app (`npm run dev --`
-instead of `npm run tui --`).
-
-**`--source` is optional for attach.** If you know the entry file you can pass
-it; if you don't, leave it out — the source panel starts empty and fills in the
-moment the first stop tells dbg which file it's in.
-
-**Try it with the bundled fixture:**
-
-```bash
-# Terminal 1 — arm dbg first
-npm run tui:fixture:attach
-
-# Terminal 2 — start the program whenever you're ready
-./fixtures/attach-demo/target/debug/attach-demo
-```
-
-The `WATCHING` badge in terminal 1 flips to `READY` the instant the process
-appears. No coordination needed beyond running dbg before starting the binary.
-
-> **One caveat:** breakpoints set before attaching can occasionally be missed
-> for code that runs in the very first milliseconds of `main()`. This is an
-> OS/DAP-level limitation of attach in general — if you need a breakpoint on
-> the first line of `main`, use `run` instead of `attach`.
-
-## Keybindings (TUI)
+**Execution**
 
 | Key | Action |
 |---|---|
@@ -149,71 +109,101 @@ appears. No coordination needed beyond running dbg before starting the binary.
 | `n` | Step over |
 | `s` | Step into |
 | `o` | Step out |
-| `b` | Toggle breakpoint on current line |
-| `f` | Open file switcher |
-| `j` / `k` | Move cursor down / up |
-| `h` / `l` | Collapse / expand variable |
-| `w` | Add watch expression |
-| `x` | Remove watch |
 | `r` | Restart session |
 | `q` | Quit |
 
-See [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md) for the full reference including
-Electron F-key bindings.
+**Navigation**
 
-## Other fixtures
+| Key | Action |
+|---|---|
+| `j` / `k` | Move cursor down / up |
+| `l` / `h` | Expand / collapse variable |
+| `Tab` / `Shift+Tab` | Cycle panel focus |
+| `z` | Fold / unfold focused panel |
+| `f` | Open fuzzy file switcher |
+
+**Breakpoints & watches**
+
+| Key | Action |
+|---|---|
+| `b` | Toggle breakpoint on current line |
+| `:w <expr>` | Add watch expression |
+| `x` | Remove selected watch |
+
+Full reference including Electron F-key bindings: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md)
+
+## Multi-file projects
+
+The source panel follows execution automatically — when the program stops in a different file, the panel switches there on its own.
+
+To set a breakpoint in a file you haven't visited yet, press `f`, type part of the filename, and hit Enter. dbg pre-scans your source tree at startup, so every file is reachable before execution starts.
 
 ```bash
-npm run tui:fixture:c          # C program
-npm run tui:fixture:cpp        # C++ program
-npm run tui:fixture:multi      # Rust, three source files (main.rs / ops.rs / report.rs)
-npm run tui:fixture:attach     # Attach flow demo (start the binary separately)
+npm run tui:fixture:multi
+# f → "report" → Enter → navigate to line → b → f → "main" → Enter → c
 ```
 
-Electron equivalents use `dev:` instead of `tui:`.
+## Process attach
+
+```bash
+# Terminal 1 — arm dbg; badge shows WATCHING
+npm run tui:fixture:attach
+
+# Terminal 2 — start the target whenever you're ready
+./fixtures/attach-demo/target/debug/attach-demo
+```
+
+The moment the process appears, dbg attaches and the status badge flips to READY.
+
+## Architecture
+
+One engine, two frontends:
+
+```
+src/
+├── engine/
+│   ├── dap/          # Content-Length framing, DapClient request/response
+│   ├── adapters/     # lldb-dap, debugpy — resolves executable, builds DAP args
+│   ├── workspace/    # bounded directory scan for the fuzzy file switcher
+│   └── session/
+│       └── DebugSession.ts   # state machine both frontends drive
+├── shared/
+│   ├── types.ts      # SessionSnapshot and all shared types
+│   └── ui/           # Zustand stores, keybindings, fuzzy match — no DOM/Ink imports
+├── tui/              # Ink terminal UI
+├── renderer/         # Electron React UI (Tailwind + Shiki)
+├── main/             # Electron main process, CLI parsing, IPC
+└── preload/          # contextBridge window.dbg API
+```
+
+`DebugSession` handles the full DAP lifecycle — adapter spawn, handshake, breakpoints, stepping, watching, restart, and clean shutdown. Neither frontend contains any protocol logic; they only call session methods and render snapshots.
+
+## Adapters
+
+dbg uses the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/) — the same open standard VS Code uses. Any DAP-compliant adapter can be plugged in by implementing the `AdapterDefinition` interface in `src/engine/adapters/`.
+
+| Adapter ID | Executable | Platform |
+|---|---|---|
+| `lldb-dap` | `lldb-dap` / `codelldb` | macOS, Linux, Windows |
+| `debugpy` | `python3 -m debugpy.adapter` | macOS, Linux, Windows |
 
 ## Documentation
 
 | Doc | Covers |
 |---|---|
-| [docs/USER_FLOWS.md](docs/USER_FLOWS.md) | Multi-file source-follow + fuzzy switcher, and `dbg attach` — design rationale and how to try each |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the engine, IPC, shared UI layer, and both frontends fit together |
-| [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md) | Full keybinding reference for both frontends |
-| [docs/TESTING.md](docs/TESTING.md) | Headless smoke-test suite and verification discipline |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Engine, IPC, shared UI layer, and both frontends |
+| [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md) | Full keybinding reference for TUI and Electron |
+| [docs/USER_FLOWS.md](docs/USER_FLOWS.md) | Multi-file follow, fuzzy switcher, process attach |
+| [docs/TESTING.md](docs/TESTING.md) | Headless smoke-test suite and verification approach |
 | [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | Current limitations and honest caveats |
 
-## Project structure
+<details>
+<summary>Regenerate the demo GIF</summary>
 
-```
-src/
-├── shared/
-│   ├── types.ts             # SessionSnapshot, DAP-derived types, IPC channel constants
-│   └── ui/                  # DOM-agnostic state + logic shared by both frontends
-│       ├── useDbgStore.ts        # zustand: session snapshot, output, DAP log
-│       ├── useUiStore.ts         # zustand: focus, cursor, active/known source files, file switcher
-│       ├── keybindings.ts        # single source of truth for each frontend's key labels
-│       ├── fuzzyMatch.ts         # file switcher's fuzzy filter/scoring
-│       ├── flattenVariables.ts
-│       └── phaseMessages.ts
-├── engine/                  # Zero Electron/Ink imports — reusable by either frontend
-│   ├── dap/                 # DAP transport: Content-Length framing, request/response client
-│   ├── adapters/            # Per-DAP-server config (currently just lldb-dap)
-│   ├── workspace/
-│   │   └── listSourceFiles.ts    # Bounded directory scan seeding the fuzzy file switcher
-│   └── session/
-│       └── DebugSession.ts       # The orchestration state machine both frontends drive
-├── main/                    # Electron main process: CLI parsing, BrowserWindow, IPC
-├── preload/                 # contextBridge-exposed window.dbg API
-├── renderer/src/            # Electron React UI (Tailwind CSS)
-└── tui/                     # Ink terminal UI
-
-fixtures/loop-demo/          # Rust fixture: loop, Vec, helper functions
-fixtures/c-loop/             # C fixture
-fixtures/cpp-loop/           # C++ fixture
-fixtures/multi-file-demo/    # Rust fixture spanning main.rs / ops.rs / report.rs
-fixtures/attach-demo/        # Rust fixture for the dbg attach flow
-scripts/                     # Headless smoke tests (see docs/TESTING.md)
+```bash
+brew install vhs
+npm run build:fixtures
+vhs demo/demo.tape
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how a debug session flows
-through the engine end to end.
+</details>
