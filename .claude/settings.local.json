@@ -82,7 +82,11 @@
       "Bash(kill -9 62259 62258 62239 62236)",
       "WebSearch",
       "Bash(kill -9 93427 93426 93407 93405)",
-      "Bash(kill -9 98772 98760 98741 98740)"
+      "Bash(kill -9 98772 98760 98741 98740)",
+      "Bash(git cherry-pick *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git commit -m ' *)"
     ],
     "additionalDirectories": [
       "/private/tmp",
