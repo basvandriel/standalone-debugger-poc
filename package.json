@@ -11,6 +11,10 @@
     "bin",
     "src"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/basvandriel/standalone-debugger-poc"
+  },
   "engines": {
     "node": ">=22"
   },
