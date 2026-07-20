@@ -64,20 +64,14 @@ npm install -g @basvandriel/dbg
 | Rust / C / C++ | Xcode Command Line Tools (macOS) · `lldb` package (Linux) |
 | Python | `pip install debugpy` |
 
-## Debug your own program
+## Usage
 
 ```bash
-# Rust / C / C++
-dbg run --program path/to/binary --source path/to/main.rs
+dbg ./target/debug/myapp          # Rust / C / C++ — adapter and source auto-detected
+dbg main.py                        # Python — adapter and source auto-detected
 
-# Python
-dbg run --adapter debugpy --program path/to/script.py --source path/to/script.py
-
-# Attach — wait for a named process to appear
-dbg attach --name path/to/binary
-
-# Attach — connect to an already-running PID
-dbg attach --pid 12345
+dbg attach ./target/debug/myapp   # wait for a named process to appear
+dbg attach --pid 12345            # connect to an already-running PID
 ```
 
 ## Try the demo
