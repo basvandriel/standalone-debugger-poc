@@ -52,6 +52,12 @@ and extract it to `C:\codelldb\`.
 **CI:** downloads the latest CodeLLDB Windows VSIX and runs the full Rust smoke
 suite (`smoke`, `smoke:session`, `smoke:multifile`).
 
+**Limitation — program stdout not captured on Windows:** When codelldb runs in
+stdio DAP mode (no VS Code terminal), it does not redirect the debuggee's stdout
+to DAP `output` events. Program output is lost. Breakpoints, variables, watches,
+and stepping all work correctly; only live stdout display is absent. This is a
+codelldb architecture issue specific to headless/stdio operation.
+
 ## Attach (`dbg attach`) limitations
 
 - **Very early breakpoints can race the attach.** Attach happens *after* the
