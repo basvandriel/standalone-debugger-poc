@@ -28,7 +28,9 @@
     "tui:fixture:multi": "npm run build:fixtures && tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/multi-file-demo/target/debug/multi-file-demo --source fixtures/multi-file-demo/src/main.rs",
     "tui:fixture:attach": "npm run build:fixtures && tsx src/tui/index.tsx attach --adapter lldb-dap --name fixtures/attach-demo/target/debug/attach-demo --source fixtures/attach-demo/src/main.rs",
     "smoke:tui": "tsx src/tui/__smoke__/tui-smoke-test.ts",
-    "smoke:tui:multifile": "tsx src/tui/__smoke__/multi-file-smoke-test.ts"
+    "smoke:tui:multifile": "tsx src/tui/__smoke__/multi-file-smoke-test.ts",
+    "smoke:python": "tsx scripts/python-smoke-test.ts",
+    "tui:fixture:python": "tsx src/tui/index.tsx run --adapter debugpy --program fixtures/python-loop/main.py --source fixtures/python-loop/main.py"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",

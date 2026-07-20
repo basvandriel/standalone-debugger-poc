@@ -72,6 +72,15 @@ export const FIXTURE_CONFIGS: Record<string, FixtureConfig> = {
     breakpointLine: 5,
     expectedSummary: "values=[2, 4, 6, 8, 10] total=30",
   },
+  "python-loop": {
+    name: "python-loop",
+    cwd: path.join(FIXTURES_ROOT, "python-loop"),
+    program: path.join(FIXTURES_ROOT, "python-loop", "main.py"),
+    source: path.join(FIXTURES_ROOT, "python-loop", "main.py"),
+    // Line 10: `total += doubled` — first hit: doubled=2, total=0
+    breakpointLine: 10,
+    expectedSummary: "items=[2, 4, 6, 8, 10] total=30",
+  },
   "attach-demo": {
     name: "attach-demo",
     cwd: path.join(FIXTURES_ROOT, "attach-demo"),

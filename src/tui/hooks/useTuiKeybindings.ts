@@ -68,11 +68,7 @@ export function useTuiKeybindings(
       return;
     }
 
-    // Ink does not parse terminal mouse/scroll events into named keys,
-    // but terminals may still deliver raw escape sequences here:
-    // - SGR mouse mode: \x1b[<Cb;Cx;CyM (wheel uses Cb 64/65 plus modifier bits)
-    // - Some terminals translate wheel to plain CSI arrows: \x1b[A / \x1b[B.
-    // Normalize all of these into the same delta behavior.
+    // SGR mouse scroll events: \x1b[<Cb;Cx;CyM (wheel uses Cb 64/65).
     let scrollDelta = 0;
     const sgrMatch = /\x1b\[<(\d+);\d+;\d+[mM]/.exec(input);
     if (sgrMatch) {
@@ -82,10 +78,6 @@ export function useTuiKeybindings(
         if (baseCode === 0) scrollDelta = -1;
         else if (baseCode === 1) scrollDelta = 1;
       }
-    } else if (input === "\x1b[A") {
-      scrollDelta = -1;
-    } else if (input === "\x1b[B") {
-      scrollDelta = 1;
     }
 
     if (scrollDelta !== 0) {
@@ -136,11 +128,10 @@ export function useTuiKeybindings(
       }
     }
 
-    const isDown =
-      key.downArrow || input === TUI_KEYS.moveDown || input === "\x1b[B";
-    const isUp = key.upArrow || input === TUI_KEYS.moveUp || input === "\x1b[A";
-    const isRight = key.rightArrow || input === TUI_KEYS.expand;
-    const isLeft = key.leftArrow || input === TUI_KEYS.collapse;
+    const isDown = input === TUI_KEYS.moveDown;
+    const isUp = input === TUI_KEYS.moveUp;
+    const isRight = input === TUI_KEYS.expand;
+    const isLeft = input === TUI_KEYS.collapse;
 
     if (ui.focusedPanel === "source") {
       if (isDown)
