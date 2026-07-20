@@ -126,23 +126,44 @@ jobs:
         if: runner.os == 'Linux'
         run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
-      - name: Engine smoke tests
+      - name: Install debugpy (Unix)
         if: runner.os != 'Windows'
-        run: |
-          npm run smoke
-          npm run smoke:session
-          npm run smoke:multifile
-          npm run smoke:attach
+        run: pip install debugpy
 
-      - name: Engine smoke tests (Windows)
+      - name: Smoke — DAP handshake (loop-demo)
+        if: runner.os != 'Windows'
+        run: npm run smoke
+
+      - name: Smoke — DAP handshake (loop-demo) (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          # codelldb (CodeLLDB's patched LLDB) handles Rust PDB debug symbols
-          # correctly, so the full Rust fixture suite runs on Windows.
-          npm run smoke
-          npm run smoke:session
-          npm run smoke:multifile
+        run: npm run smoke
+
+      - name: Smoke — DebugSession (loop-demo)
+        if: runner.os != 'Windows'
+        run: npm run smoke:session
+
+      - name: Smoke — DebugSession (loop-demo) (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: npm run smoke:session
+
+      - name: Smoke — cross-file breakpoints (multi-file-demo)
+        if: runner.os != 'Windows'
+        run: npm run smoke:multifile
+
+      - name: Smoke — cross-file breakpoints (multi-file-demo) (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: npm run smoke:multifile
+
+      - name: Smoke — process attach (attach-demo)
+        if: runner.os != 'Windows'
+        run: npm run smoke:attach
+
+      - name: Smoke — Python / debugpy (python-loop)
+        if: runner.os != 'Windows'
+        run: npm run smoke:python
 
       - name: Check for orphaned lldb-dap processes (Unix)
         if: always() && runner.os != 'Windows'
@@ -204,10 +225,11 @@ jobs:
       - name: Build fixtures
         run: npm run build:fixtures
 
-      - name: TUI smoke tests
-        run: |
-          npm run smoke:tui
-          npm run smoke:tui:multifile
+      - name: Smoke — TUI session (loop-demo)
+        run: npm run smoke:tui
+
+      - name: Smoke — TUI cross-file breakpoints (multi-file-demo)
+        run: npm run smoke:tui:multifile
 
       - name: Check for orphaned lldb-dap processes
         if: always()
