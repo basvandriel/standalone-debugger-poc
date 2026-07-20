@@ -48,8 +48,13 @@ workspace/project config file.
 into sibling modules `ops.rs` and `report.rs`):
 
 ```bash
-npm run build:fixtures
+# from the repo (after npm run build:fixtures)
 npm run tui:fixture:multi     # or: npm run dev:fixture:multi for Electron
+
+# or with the published CLI
+dbg run --adapter lldb-dap \
+  --program fixtures/multi-file-demo/target/debug/multi-file-demo \
+  --source fixtures/multi-file-demo/src/main.rs
 ```
 
 Press `f`, type `report`, `Enter` — jumps to `report.rs`, never visited yet.
@@ -104,8 +109,12 @@ worth revisiting once attach-by-name has proven the UX is wanted at all.
 counter loop):
 
 ```bash
-npm run build:fixtures
+# from the repo (after npm run build:fixtures)
 npm run tui:fixture:attach
+
+# or with the published CLI
+dbg attach --adapter lldb-dap \
+  --name fixtures/attach-demo/target/debug/attach-demo
 ```
 
 Then, from a **second terminal**, start the built binary directly:

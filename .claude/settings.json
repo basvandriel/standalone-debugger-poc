@@ -1,6 +1,10 @@
 {
   "permissions": {
     "allow": [
+      "Bash(npm view *)",
+      "Bash(npm pack *)",
+      "Bash(npm whoami *)",
+      "Bash(npm publish *)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,120\\)\" -frames:v 1 /tmp/frame_new120.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,200\\)\" -frames:v 1 /tmp/frame_new200.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,300\\)\" -frames:v 1 /tmp/frame_new300.png -y)",
@@ -18,7 +22,9 @@
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,340\\)\" -frames:v 1 /tmp/v340.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,270\\)\" -frames:v 1 /tmp/vfix270.png -y)",
       "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,310\\)\" -frames:v 1 /tmp/vfix310.png -y)",
-      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,350\\)\" -frames:v 1 /tmp/vfix350.png -y)"
+      "Bash(ffmpeg -i demo/demo.gif -vf \"select=eq\\(n\\\\,350\\)\" -frames:v 1 /tmp/vfix350.png -y)",
+      "Bash(GIT_SEQUENCE_EDITOR='sed -i \"\" \"s/^pick 9d49af0/edit 9d49af0/\"' git rebase -i b310c2d)",
+      "Bash(git stash *)"
     ]
   }
 }

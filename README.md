@@ -51,7 +51,11 @@ Inspired by [lazygit](https://github.com/jesseduffield/lazygit) and [k9s](https:
 | C++ | `lldb-dap` | |
 | Python | `debugpy` | Stdout captured via DAP · `pip install debugpy` required |
 
-## Quick start
+## Install
+
+```bash
+npm install -g @basvandriel/dbg
+```
 
 **Prerequisites:** Node.js 22+, plus the adapter for your language:
 
@@ -60,6 +64,26 @@ Inspired by [lazygit](https://github.com/jesseduffield/lazygit) and [k9s](https:
 | Rust / C / C++ | Xcode Command Line Tools (macOS) · `lldb` package (Linux) |
 | Python | `pip install debugpy` |
 
+## Debug your own program
+
+```bash
+# Rust / C / C++
+dbg run --program path/to/binary --source path/to/main.rs
+
+# Python
+dbg run --adapter debugpy --program path/to/script.py --source path/to/script.py
+
+# Attach — wait for a named process to appear
+dbg attach --name path/to/binary
+
+# Attach — connect to an already-running PID
+dbg attach --pid 12345
+```
+
+## Try the demo
+
+Clone the repo, build the fixture binaries, and run them against the bundled examples:
+
 ```bash
 git clone https://github.com/basvandriel/standalone-debugger-poc
 cd standalone-debugger-poc
@@ -67,36 +91,12 @@ npm install
 npm run build:fixtures       # compile the bundled Rust / C / C++ demo programs
 ```
 
-**Terminal UI (recommended):**
-
 ```bash
 npm run tui:fixture          # Rust
 npm run tui:fixture:python   # Python
 npm run tui:fixture:multi    # Rust, three source files
 npm run tui:fixture:c        # C
 npm run tui:fixture:cpp      # C++
-```
-
-**Electron GUI:**
-
-```bash
-npm run dev:fixture
-```
-
-## Debug your own program
-
-```bash
-# Rust / C / C++
-npm run tui -- run --program path/to/binary --source path/to/main.rs
-
-# Python
-npm run tui -- run --adapter debugpy --program path/to/script.py --source path/to/script.py
-
-# Attach — wait for a named process to appear
-npm run tui -- attach --name path/to/binary
-
-# Attach — connect to an already-running PID
-npm run tui -- attach --pid 12345
 ```
 
 ## Keybindings
