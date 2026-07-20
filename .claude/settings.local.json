@@ -82,7 +82,11 @@
       "Bash(kill -9 62259 62258 62239 62236)",
       "WebSearch",
       "Bash(kill -9 93427 93426 93407 93405)",
-      "Bash(kill -9 98772 98760 98741 98740)"
+      "Bash(kill -9 98772 98760 98741 98740)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch .env' --prune-empty -- HEAD)",
+      "Bash(git stash *)",
+      "Bash(cp /tmp/dbg-npmtoken.env /Users/bas/standalone-debugger-poc/.env && echo \"restored\")",
+      "Bash(git commit -m ' *)"
     ],
     "additionalDirectories": [
       "/private/tmp",
