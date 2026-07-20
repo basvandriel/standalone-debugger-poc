@@ -138,6 +138,10 @@ export const lldbDapAdapter: AdapterDefinition = {
       // Activates Rust/C/C++ type formatters and NatVis in codelldb.
       // lldb-dap ignores this field (DAP adapters silently skip unknown args).
       sourceLanguages: ['rust', 'c', 'cpp'],
+      // Redirect debuggee stdout/stderr through DAP output events so callers
+      // can capture program output. codelldb defaults to no capture on Windows;
+      // lldb-dap ignores the field entirely (it always captures).
+      stdio: [null, 'pipe', 'pipe'],
     };
   },
   buildAttachArgs({ pid, name }) {
