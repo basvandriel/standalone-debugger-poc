@@ -373,7 +373,10 @@ export class DebugSession {
     const threadId = this.selectedThreadId;
     this.phase = "running";
     this.emitSnapshot();
-    await this.sendRequest("continue", { threadId });
+    // Fire-and-forget: codelldb may close the pipe before acking continue when
+    // the debuggee exits immediately. Termination is signalled by events, not
+    // by the continue response body (which we don't use), so not awaiting is safe.
+    void this.sendRequest("continue", { threadId }).catch(() => {});
   }
 
   async stepOver(): Promise<void> {
