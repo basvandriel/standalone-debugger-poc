@@ -44,10 +44,8 @@ jobs:
             VERSION="$YEAR.$MONTH.$PATCH"
             DIST_TAG="latest"
           else
-            # Sanitise branch name: feature/my-thing -> my-thing
-            BRANCH=$(echo "${{ github.ref_name }}" | sed 's|feature/||' | sed 's|[^a-zA-Z0-9-]|-|g')
             SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-            VERSION="$YEAR.$MONTH.$PATCH-$BRANCH.$SHA"
+            VERSION="$YEAR.$MONTH.$PATCH-rc.$SHA"
             DIST_TAG="next"
           fi
 
