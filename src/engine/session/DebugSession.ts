@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { access } from "node:fs/promises";
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { DapClient } from "../dap/DapClient.js";
-import { spawnAdapter } from "../dap/spawnAdapter.js";
+import { spawnAdapter, killAdapter } from "../dap/spawnAdapter.js";
 import type { AdapterDefinition } from "../adapters/types.js";
 import type {
   BreakpointDescriptor,
@@ -332,7 +332,7 @@ export class DebugSession {
    */
   async restart(): Promise<void> {
     if (this.phase !== "terminated" && this.phase !== "error") return;
-    if (this.child && !this.child.killed) {
+    if (this.child) {
       // Detach first -- otherwise this deliberate kill's async 'exit' event
       // fires after the new child (spawned below by start()) is already
       // live, and handleAdapterExit would clobber the *new* session back
@@ -340,7 +340,7 @@ export class DebugSession {
       this.child.removeAllListeners("exit");
       this.child.removeAllListeners("error");
       this.client?.dispose();
-      this.child.kill();
+      killAdapter(this.child);
     }
     this.client = undefined;
     this.child = undefined;
@@ -458,7 +458,7 @@ export class DebugSession {
     clearTimeout(timeoutHandle);
 
     client.dispose();
-    if (!child.killed) child.kill();
+    killAdapter(child);
   }
 
   private assertClient(): DapClient {
