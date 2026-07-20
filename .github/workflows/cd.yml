@@ -42,25 +42,27 @@ jobs:
             PATCH=0
           fi
 
-          if [ "${{ github.ref_name }}" = "main" ]; then
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          SHA=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
+
+          if [ "$BRANCH" = "main" ]; then
             VERSION="$YEAR.$MONTH.$PATCH"
             DIST_TAG="latest"
           else
-            SHA=$(echo "${{ github.sha }}" | cut -c1-7)
             VERSION="$YEAR.$MONTH.$PATCH-rc.sha$SHA"
             DIST_TAG="next"
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
-          echo "is_main=${{ github.ref_name == 'main' }}" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "Publishing $VERSION to @$DIST_TAG"
 
       - name: Bump package.json version
         run: npm version ${{ steps.release.outputs.version }} --no-git-tag-version
 
       - name: Commit and tag (main only)
-        if: github.ref_name == 'main'
+        if: steps.release.outputs.branch == 'main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
