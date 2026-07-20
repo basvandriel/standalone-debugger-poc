@@ -30,6 +30,7 @@
     "smoke:tui": "tsx src/tui/__smoke__/tui-smoke-test.ts",
     "smoke:tui:multifile": "tsx src/tui/__smoke__/multi-file-smoke-test.ts",
     "smoke:python": "tsx scripts/python-smoke-test.ts",
+    "demo": "tsx src/tui/index.tsx run --adapter lldb-dap --program fixtures/loop-demo/target/debug/loop-demo --source fixtures/loop-demo/src/main.rs",
     "tui:fixture:python": "tsx src/tui/index.tsx run --adapter debugpy --program fixtures/python-loop/main.py --source fixtures/python-loop/main.py"
   },
   "devDependencies": {
