@@ -82,7 +82,15 @@
       "Bash(kill -9 62259 62258 62239 62236)",
       "WebSearch",
       "Bash(kill -9 93427 93426 93407 93405)",
-      "Bash(kill -9 98772 98760 98741 98740)"
+      "Bash(kill -9 98772 98760 98741 98740)",
+      "Bash(git cherry-pick *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(node -e \"const s = require\\('semver'\\); console.log\\(s.valid\\('2026.7.2-rc.abc1234'\\)\\); console.log\\(s.valid\\('2026.7.2-rc.0000000'\\)\\);\")",
+      "Bash(node -e \"const s = require\\('semver'\\); console.log\\(s.valid\\('2026.7.2-rc.sha1234567'\\)\\);\")",
+      "Bash(node -e \"const s = require\\('semver'\\); const v = '2026.7.2-rc.sha3f9a1c2'; console.log\\('valid:', s.valid\\(v\\)\\); console.log\\('prerelease:', s.prerelease\\(v\\)\\);\")"
     ],
     "additionalDirectories": [
       "/private/tmp",
