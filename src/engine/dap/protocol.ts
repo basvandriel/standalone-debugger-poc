@@ -28,3 +28,17 @@ export interface LldbDapAttachArguments extends DebugProtocol.AttachRequestArgum
   program?: string;
   waitFor?: boolean;
 }
+
+export interface DebugpyLaunchArguments extends DebugProtocol.LaunchRequestArguments {
+  program: string;
+  cwd?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  stopOnEntry?: boolean;
+  console?: 'internalConsole' | 'integratedTerminal' | 'externalTerminal';
+  python?: string[];
+}
+
+export interface DebugpyAttachArguments extends DebugProtocol.AttachRequestArguments {
+  processId?: number;
+}

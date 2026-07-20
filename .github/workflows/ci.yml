@@ -126,6 +126,10 @@ jobs:
         if: runner.os == 'Linux'
         run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
+      - name: Install debugpy (Unix)
+        if: runner.os != 'Windows'
+        run: pip install debugpy
+
       - name: Engine smoke tests
         if: runner.os != 'Windows'
         run: |
@@ -133,6 +137,7 @@ jobs:
           npm run smoke:session
           npm run smoke:multifile
           npm run smoke:attach
+          npm run smoke:python
 
       - name: Engine smoke tests (Windows)
         if: runner.os == 'Windows'
